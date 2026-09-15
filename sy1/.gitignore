@@ -1,0 +1,4 @@
+# Generated build output and restored NuGet package cache.
+bin/
+obj/
+packages/
