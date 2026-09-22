@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>用户注册</title>
+</head>
+<body>
+<main>
+    <h1>创建账号</h1>
+    <p th:if="${error}" th:text="${error}"></p>
+    <form method="post" action="/register">
+        <label>用户名
+            <input name="username" minlength="3" maxlength="20" required th:value="${username}">
+        </label>
+        <br>
+        <label>密码
+            <input type="password" name="password" minlength="6" required>
+        </label>
+        <br>
+        <label>确认密码
+            <input type="password" name="confirmPassword" minlength="6" required>
+        </label>
+        <br>
+        <button type="submit">注册</button>
+    </form>
+    <p><a href="/login">已有账号？返回登录</a></p>
+</main>
+</body>
+</html>
