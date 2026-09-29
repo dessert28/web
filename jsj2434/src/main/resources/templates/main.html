@@ -1,10 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>主页 - jsj2434</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
 </head>
 <body>
-<h1>欢迎来到我的网站,这里是主页</h1>
+<main class="page-shell">
+    <section class="card card--hero">
+        <p class="eyebrow">JSJ2434</p>
+        <h1>欢迎来到我的网站，这里是主页</h1>
+        <p class="muted">您已通过身份认证，可以继续访问受保护内容。</p>
+        <div class="actions">
+            <a class="button button--secondary" th:href="@{/}" href="/">返回首页</a>
+            <form class="logout-form" th:action="@{/logout}" method="post">
+                <button class="button" type="submit">退出登录</button>
+            </form>
+        </div>
+    </section>
+</main>
 </body>
 </html>

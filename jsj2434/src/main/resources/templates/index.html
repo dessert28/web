@@ -1,11 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>欢迎 - jsj2434</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
 </head>
 <body>
-    <h1>欢迎来到我的网站</h1>
-    <a href="/toLogin">还未登录</a>
+<main class="page-shell">
+    <section class="card card--hero">
+        <p class="eyebrow">JSJ2434</p>
+        <h1>欢迎来到我的网站</h1>
+        <p class="muted">一个使用 Spring Boot 构建的安全登录示例。</p>
+        <a class="button" th:href="@{/toLogin}" href="/toLogin">前往登录</a>
+    </section>
+</main>
 </body>
 </html>

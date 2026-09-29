@@ -1,17 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>登录 - jsj2434</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
 </head>
 <body>
-<!--登录页面-->
-<form action="/login" method="post">
-    <label for="username">用户名:</label>
-    <input type="text" id="username" name="username"><br><br>
-    <label for="password">密码:</label>
-    <input type="password" id="password" name="password"><br><br>
-    <input type="submit" value="登录">
-</form>
+<main class="page-shell">
+    <section class="card">
+        <p class="eyebrow">JSJ2434</p>
+        <h1>登录</h1>
+        <p class="muted">请输入管理员账号继续。</p>
+
+        <div class="alert alert--error" th:if="${param.error != null}" th:text="'用户名或密码错误'"></div>
+        <div class="alert alert--success" th:if="${param.logout != null}" th:text="'已安全退出'"></div>
+
+        <form class="login-form" th:action="@{/login}" method="post">
+            <div class="field">
+                <label for="username">用户名</label>
+                <input id="username" name="username" type="text" autocomplete="username" required>
+            </div>
+            <div class="field">
+                <label for="password">密码</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required>
+            </div>
+            <button class="button" type="submit">登录</button>
+        </form>
+
+        <a class="link" th:href="@{/}" href="/">返回首页</a>
+    </section>
+</main>
 </body>
 </html>
