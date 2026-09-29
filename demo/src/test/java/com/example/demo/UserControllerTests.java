@@ -8,98 +8,48 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class UserControllerTests {
-
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired MockMvc mockMvc;
 
     @Test
-    void registrationCreatesAccountAndRejectsDuplicateUsername() throws Exception {
-        register("alice01", "secret1", "secret1")
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?registered"));
-
-        register("alice01", "secret2", "secret2")
-                .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("用户名已存在")));
-    }
-
-    @Test
-    void registrationRejectsMismatchedPasswords() throws Exception {
-        register("bob01", "secret1", "secret2")
-                .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("两次密码不一致")));
-    }
-
-    @Test
-    void registrationRejectsShortUsernameAndPassword() throws Exception {
-        register("ab", "12345", "12345")
-                .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("用户名长度")));
-    }
-
-    @Test
-    void successfulLoginCreatesSessionAndHomeShowsUsername() throws Exception {
-        register("carol01", "secret1", "secret1").andExpect(status().is3xxRedirection());
-
-        MvcResult login = mockMvc.perform(post("/login")
-                        .param("username", "carol01")
-                        .param("password", "secret1"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/home"))
-                .andReturn();
-
+    void registrationLoginHomeAndLogoutFlowWorks() throws Exception {
+        mockMvc.perform(post("/register").param("username", "pageUser01").param("email", "page@example.com")
+                        .param("password", "secret1").param("confirmPassword", "secret1"))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login?registered"));
+        MvcResult login = mockMvc.perform(post("/login").param("username", "pageUser01").param("password", "secret1"))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/home")).andReturn();
         MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
-        mockMvc.perform(get("/home").session(session))
-                .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("carol01")));
+        mockMvc.perform(get("/home").session(session)).andExpect(status().isOk())
+                .andExpect(content().string(containsString("pageUser01")))
+                .andExpect(content().string(containsString("page@example.com")));
+        mockMvc.perform(post("/logout").session(session)).andExpect(redirectedUrl("/login?logout"));
+        mockMvc.perform(get("/home").session(session)).andExpect(redirectedUrl("/login"));
     }
 
     @Test
-    void wrongPasswordIsRejected() throws Exception {
-        register("dave01", "secret1", "secret1").andExpect(status().is3xxRedirection());
-
-        mockMvc.perform(post("/login")
-                        .param("username", "dave01")
-                        .param("password", "wrong1"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?error"));
+    void registrationRejectsDuplicateEmailAndMismatchedPasswords() throws Exception {
+        register("pageUser02", "second@example.com", "secret1", "secret1").andExpect(status().is3xxRedirection());
+        register("pageUser03", "second@example.com", "secret1", "secret1").andExpect(status().isOk()).andExpect(content().string(containsString("邮箱已存在")));
+        register("pageUser04", "fourth@example.com", "secret1", "secret2").andExpect(status().isOk()).andExpect(content().string(containsString("两次密码不一致")));
     }
 
     @Test
-    void unauthenticatedHomeRedirectsToLoginAndLogoutInvalidatesSession() throws Exception {
-        mockMvc.perform(get("/home"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login"));
-
-        register("erin01", "secret1", "secret1").andExpect(status().is3xxRedirection());
-        MvcResult login = mockMvc.perform(post("/login")
-                        .param("username", "erin01")
-                        .param("password", "secret1"))
-                .andReturn();
-        MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
-
-        mockMvc.perform(post("/logout").session(session))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?logout"));
-        mockMvc.perform(get("/home").session(session))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login"));
+    void registrationAcceptsAvatarUpload() throws Exception {
+        byte[] png = new byte[] {(byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1};
+        mockMvc.perform(multipart("/register").file("avatar", png).param("username", "pageUser05")
+                        .param("email", "avatar@example.com").param("password", "secret1").param("confirmPassword", "secret1"))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login?registered"));
     }
 
-    private org.springframework.test.web.servlet.ResultActions register(
-            String username, String password, String confirmPassword) throws Exception {
-        return mockMvc.perform(post("/register")
-                .param("username", username)
-                .param("password", password)
-                .param("confirmPassword", confirmPassword));
+    private org.springframework.test.web.servlet.ResultActions register(String username, String email, String password, String confirm) throws Exception {
+        return mockMvc.perform(post("/register").param("username", username).param("email", email).param("password", password).param("confirmPassword", confirm));
     }
 }

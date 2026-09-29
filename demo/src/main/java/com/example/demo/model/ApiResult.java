@@ -2,19 +2,14 @@ package com.example.demo.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-/**
- * 接口统一响应对象：success 表示成败，message 是提示语，username 只在需要时返回。
- */
-
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record ApiResult(boolean success, String message, String username) {
-
-    public static ApiResult ok(String message, String username) {
-        return new ApiResult(true, message, username);
+public record ApiResult(boolean success, String message, String username, String email, String avatarUrl) {
+    public static ApiResult ok(String message, UserProfile profile) {
+        return new ApiResult(true, message, profile == null ? null : profile.username(),
+                profile == null ? null : profile.email(), profile == null ? null : profile.avatarUrl());
     }
 
     public static ApiResult fail(String message) {
-        return new ApiResult(false, message, null);
+        return new ApiResult(false, message, null, null, null);
     }
 }

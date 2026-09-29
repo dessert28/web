@@ -2,15 +2,19 @@
 <html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>用户首页</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>个人中心</title>
+    <link rel="stylesheet" href="/css/auth.css">
 </head>
 <body>
-<main>
-    <h1>欢迎回来，<span th:text="${username}">用户</span>！</h1>
-    <p>你已成功登录。</p>
-    <form method="post" action="/logout">
-        <button type="submit">退出登录</button>
-    </form>
+<main class="page">
+    <section class="card profile">
+        <img th:if="${profile.avatarUrl}" th:src="${profile.avatarUrl}" class="avatar-preview" alt="头像">
+        <div th:unless="${profile.avatarUrl}" class="avatar-fallback" aria-hidden="true"></div>
+        <h1>欢迎回来，<span th:text="${profile.username}">用户</span></h1>
+        <p class="profile-email" th:text="${profile.email}">example@email.com</p>
+        <a class="logout" href="/logout">退出登录</a>
+    </section>
 </main>
 </body>
 </html>

@@ -2,28 +2,39 @@
 <html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>用户注册</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>注册账号</title>
+    <link rel="stylesheet" href="/css/auth.css">
 </head>
 <body>
-<main>
-    <h1>创建账号</h1>
-    <p th:if="${error}" th:text="${error}"></p>
-    <form method="post" action="/register">
-        <label>用户名
-            <input name="username" minlength="3" maxlength="20" required th:value="${username}">
-        </label>
-        <br>
-        <label>密码
-            <input type="password" name="password" minlength="6" required>
-        </label>
-        <br>
-        <label>确认密码
-            <input type="password" name="confirmPassword" minlength="6" required>
-        </label>
-        <br>
-        <button type="submit">注册</button>
-    </form>
-    <p><a href="/login">已有账号？返回登录</a></p>
+<main class="page">
+    <section class="card">
+        <h1>注册账号</h1>
+        <p class="notice" th:if="${error}" th:text="${error}"></p>
+        <form method="post" action="/register" enctype="multipart/form-data">
+            <div class="avatar-picker">
+                <img id="avatarPreview" class="avatar-preview" alt="头像预览">
+                <div id="avatarFallback" class="avatar-fallback" aria-hidden="true"></div>
+                <label for="avatar">上传头像</label>
+                <input id="avatar" type="file" name="avatar" accept="image/png,image/jpeg,image/gif,image/webp">
+            </div>
+            <div class="field"><label for="username">用户名</label><input id="username" name="username" minlength="3" maxlength="20" required th:value="${username}"></div>
+            <div class="field"><label for="email">邮箱</label><input id="email" type="email" name="email" maxlength="100" required placeholder="example@email.com" th:value="${email}"></div>
+            <div class="field"><label for="password">密码</label><input id="password" type="password" name="password" minlength="6" required></div>
+            <div class="field"><label for="confirmPassword">确认密码</label><input id="confirmPassword" type="password" name="confirmPassword" minlength="6" required></div>
+            <button class="button" type="submit">注册</button>
+        </form>
+        <p class="switch">已有账号？<a href="/login">返回登录</a></p>
+    </section>
 </main>
+<script>
+    document.getElementById('avatar').addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        const preview = document.getElementById('avatarPreview');
+        const fallback = document.getElementById('avatarFallback');
+        if (!file) { preview.style.display = 'none'; fallback.style.display = 'flex'; return; }
+        preview.src = URL.createObjectURL(file); preview.style.display = 'block'; fallback.style.display = 'none';
+    });
+</script>
 </body>
 </html>
