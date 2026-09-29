@@ -16,7 +16,7 @@
         <div class="alert alert--error" th:if="${param.error != null}" th:text="'用户名或密码错误'"></div>
         <div class="alert alert--success" th:if="${param.logout != null}" th:text="'已安全退出'"></div>
 
-        <form class="login-form" th:action="@{/login}" method="post">
+        <form class="login-form" th:action="@{/login}" method="post" th:unless="${param.logout != null}">
             <div class="field">
                 <label for="username">用户名</label>
                 <input id="username" name="username" type="text" autocomplete="username" required>

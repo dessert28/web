@@ -66,7 +66,7 @@ class UserControllerSecurityTest {
     void logoutEndsSession() throws Exception {
         mockMvc.perform(post("/logout").with(user("admin")).with(csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/toLogin?logout"));
+                .andExpect(redirectedUrl("/"));
     }
 
     @Test
