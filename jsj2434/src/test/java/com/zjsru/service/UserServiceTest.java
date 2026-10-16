@@ -1,38 +1,27 @@
 package com.zjsru.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.zjsru.domain.User;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
-@SpringBootTest
 class UserServiceTest {
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final UserService userService = new UserServiceimpl();
 
     @Test
-    void adminLoadsWithEncodedDemoPassword() {
-        UserDetails admin = userService.loadUserByUsername("admin");
-
-        assertThat(admin.getUsername()).isEqualTo("admin");
-        assertThat(passwordEncoder.matches("123", admin.getPassword())).isTrue();
-        assertThat(admin.getAuthorities())
-                .extracting("authority")
-                .containsExactly("ROLE_USER");
+    void acceptsDemoCredentials() {
+        User user = new User();
+        user.setUsername("admin");
+        user.setPassword("123");
+        assertTrue(userService.login(user));
     }
 
     @Test
-    void unknownUserIsRejected() {
-        assertThatThrownBy(() -> userService.loadUserByUsername("unknown"))
-                .isInstanceOf(UsernameNotFoundException.class);
+    void rejectsOtherCredentials() {
+        assertFalse(userService.login(new User("admin", "wrong")));
+        assertFalse(userService.login(new User("guest", "123")));
+        assertFalse(userService.login(new User("dessert", "202405315424")));
+        assertFalse(userService.login(new User()));
     }
 }

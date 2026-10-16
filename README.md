@@ -1,3 +1,4 @@
+> **2026-10-16 工作区更新**：jsj2434 已按当前 demo/demo 替换，现行说明见第 2.2 节及 HANDOFF.md 顶部。demo 的实际源码现位于 demo/demo，是简易登录课程实验；下面第 2.1 节、目录地图及 demo 相关命令保留的是历史注册/头像版本资料，不代表当前磁盘内容。jsj2434 的旧 SecurityConfig、Users 和 app.css 目录描述也已失效，以第 2.2 节为准。
 # web — 多项目练习仓库（总览）
 
 > **这是什么**：一个 Git 仓库，里面并排放了 4 个互不相关的练习/作业项目，外加 2 个早期快照压缩包和一份 GPL-3.0 许可证。
@@ -8,7 +9,7 @@
 | 项目 | 位置 | 技术栈 | 状态 |
 | --- | --- | --- | --- |
 | 用户注册/登录示例 | `demo/` | Spring Boot 4.1.1 · Java 17 · Thymeleaf · BCrypt | ✅ 完成，**9/9 测试通过**（2026-10-09 实测） |
-| 安全登录站点 | `jsj2434/` | Spring Boot 4.0.8 · Java 21 · Spring Security · Lombok | ⚠️ 功能完成，**12 个测试中 1 个失败** |
+| demo 课程登录实验复刻 | `jsj2434/` | Spring Boot 4.0.8 · Java 21 · Thymeleaf · Lombok | ✅ 14/14 测试通过（2026-10-16 实测） |
 | Maven 空壳工程 | `Test34/` | Java 21 · mysql-connector-j 8.4.0 | ⬜ 只有 Hello World，无 Maven Wrapper |
 | ASP.NET 空模板 | `sy1/` | .NET Framework 4.7.2 · IIS Express · Docker | ⬜ 模板未写任何页面 |
 | 早期快照 | `demo.zip`、`jsj2434.rar` | — | 📦 与当前目录内容**不一致**，勿当源码用 |
@@ -96,29 +97,20 @@ D:\project\githubclone\web\        ← git 仓库根（remote: git@github.com:de
 
 > ⚠️ `run-tests.bat` 名字像批处理，内容其实是 **bash 脚本**（`#!/bin/bash` 且调用 `mvn`），在 Windows 上不能直接运行；请用下面的 `mvnw.cmd` 命令。
 
-### 2.2 `jsj2434/` — Spring Security 登录站点
+### 2.2 `jsj2434/` — demo 课程登录实验复刻
 
-| 项 | 说明 |
-| --- | --- |
-| 技术栈 | Spring Boot **4.0.8**、Java **21**、thymeleaf + webmvc + **spring-boot-starter-security**、lombok（optional） |
-| 启动类 | `com.zjsru.Jsj2434Application` |
-| 默认端口 | 8080 |
-| 演示凭据 | 用户名 `admin`，密码 `123`（`UserService` 中硬编码的 BCrypt 哈希，**仅供演示**） |
+2026-10-16 按用户要求完整复刻当前 `demo/demo` 的页面和业务行为，保留 `com.zjsru:jsj2434`、Spring Boot 4.0.8、Java 21 和现有 Maven 构建配置。
 
-**`SecurityConfig` 规则**
+- 模型：普通 User Java Bean；服务：UserService 接口 + UserServiceimpl，仅接受演示账号 admin/123。
+- 页面：index、login、main 与源项目逐字节一致；原 app.css 已移除。
+- GET / 返回 index；GET /tologin 返回 login；POST /login 成功内部转发 /toMain，失败返回 login。
+- /toMain 返回 main，并向模型添加 username；/logout 返回文本“退出成功”；/logout2 返回 login 并附带同名提示。
+- 原 /toLogin、/main、/test/{username}/{password} 已移除；没有 Spring Security 认证链。
+- 源项目行为原样保留：模板读取 session.username，登录未写入 session，故用户名可为空；退出不销毁会话，主页可直接访问。
 
-| 规则 | 内容 |
-| --- | --- |
-| 放行 | `/`、`/toLogin`、`/css/**`、`/error` |
-| 其余 | 一律需要认证 |
-| 表单登录 | `loginPage=/toLogin`，提交 `POST /login`，成功 `/main`，失败 `/toLogin?error` |
-| 退出 | `POST /logout`（CSRF 校验），成功后跳 **`/toLogin?logout`**，销毁 session 并删除 `JSESSIONID` |
+新增 GlobalExceptionHandler，限定处理 com.zjsru.controller 下的空指针、算术及其他异常，返回中文文本响应正文（HTTP 200），同时输出异常堆栈。测试用异常接口不进入正式应用。
 
-**页面**：`index.html`（欢迎页）→ `login.html`（登录表单；`param.logout` 非空时隐藏表单并显示“已安全退出”）→ `main.html`（需登录，含 `POST /logout` 表单）；共用 `static/css/app.css`。
-
-**测试**（12 个用例）：`UserControllerSecurityTest`(7)、`UserPageTest`(2)、`Jsj2434ApplicationTests`(1)、`UserServiceTest`(2)。
-
-> ❗ **当前 HEAD 下 12 个用例有 1 个失败**：`UserControllerSecurityTest.logoutEndsSession` 断言 `redirectedUrl("/")`，但配置返回 `/toLogin?logout`。最后一个提交（41986fc）只改了测试断言与 `login.html`，没有同步配置。详见 [HANDOFF.md](HANDOFF.md)。
+保留全部 4 个原有测试文件并新增异常处理测试，2026-10-16 使用 Java 21 实跑 ` .\mvnw.cmd -B clean test `：**BUILD SUCCESS，14/14 通过**。涵盖页面、内部转发、模型/session 差异、退出响应、旧接口移除及账号校验。
 
 ### 2.3 `Test34/` — Maven 空壳工程
 
@@ -167,7 +159,7 @@ $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-17.0.12'
 # jsj2434：跑测试（JDK 21）
 cd D:\project\githubclone\web\jsj2434
 $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
-.\mvnw.cmd test                # 现状：Tests run: 12, Failures: 1（见 HANDOFF）
+.\mvnw.cmd -B clean test       # 2026-10-16 实测：Tests run: 14, Failures: 0
 
 # jsj2434：启动（http://localhost:8080/ ，登录 admin / 123）
 .\mvnw.cmd spring-boot:run

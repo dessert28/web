@@ -1,3 +1,62 @@
+# HANDOFF.md — 当前交接状态（2026-10-16）
+
+本节优先于后面的历史记录。用户已明确授权用当前磁盘上的 `demo/demo` 完整替换 `jsj2434`，包括移除原 URL 和旧功能；这是本次任务对 AGENTS.md 中相关旧契约规则的明确例外。
+
+## 本次提交与推送（2026-10-16）
+
+- 用户明确授权提交并推送 jsj2434 的 demo 复刻、全局异常处理及相关测试，以及 README.md、HANDOFF.md。
+- 推送前重新实跑 Java 21 下的 .\mvnw.cmd -B clean test：BUILD SUCCESS，Tests run: 14, Failures: 0, Errors: 0, Skipped: 0。
+- 提交消息：feat(jsj2434): replicate demo and add global exception handling；目标 origin/main（git@github.com:dessert28/web.git）。
+- 执行前远端 main 为 bf94cb8，与本地一致；提交包含本节说明，推送结果以 git push 输出及远端提交核验为准。
+- 仅提交 jsj2434 与两份文档；shiyan2 的 5 个已暂存文件和其他已有改动保留。下文“未提交、未推送”描述为此前各轮的历史记录。
+
+## 全局异常处理更新（2026-10-16）
+
+- 新增 com.zjsru.exception.GlobalExceptionHandler，通过 @RestControllerAdvice(basePackages = "com.zjsru.controller") 处理控制器异常。
+- NullPointerException 返回“空指针异常：对象为空”；ArithmeticException 返回“算术异常：计算出错”；其余 Exception 返回“其他异常：系统处理失败”。
+- 返回类型均为 String，直接输出响应正文，默认 HTTP 200；每个处理方法调用 e.printStackTrace()。没有新增 Result、错误页或正式演示接口。
+- 新增 GlobalExceptionHandlerTest，测试专用控制器仅在该测试中导入，使用实际 Spring Boot 配置验证三类异常的正文、text/plain 类型与 HTTP 200。
+- 本轮使用 JAVA_HOME=D:\pc\.jdks\graalvm-jdk-21.0.7，在 jsj2434 目录实跑 .\mvnw.cmd -B clean test：BUILD SUCCESS，Tests run: 14, Failures: 0, Errors: 0, Skipped: 0。包含原有 11 个回归测试，旧 URL 与旧样式仍为 404。
+- 首次独立 MockMvc 测试因默认字符串转换编码导致中文变问号，已改用项目实际 Spring Boot 上下文验证，未修改业务编码配置。
+- 本轮仅新增处理类、测试并更新本文；其他代码保持原样，未提交、未推送。以下 11/11 数据属于上一轮复刻验证记录。
+
+## 当前实现
+
+- jsj2434 已复刻 demo/demo 的控制器、User Java Bean、UserService 接口、UserServiceimpl 和三个 HTML 模板；Java 包仍为 com.zjsru。
+- 保留项目坐标、Spring Boot 4.0.8、Java 21、启动类、Maven Wrapper 和阿里云镜像；加入源项目的 devtools 与 Lombok 编译配置。
+- 路由为 /、/tologin、/login、/toMain、/logout、/logout2。正确登录内部 forward:/toMain；错误登录返回 login。
+- 仅保留课程演示账号 admin/123；移除额外账号、Users、旧 app.css，以及 /toLogin、/main、/test/{username}/{password}。
+- 保留全部 4 个现有测试文件，按新契约调整断言；当前共 14 个测试（控制器 6、页面 2、服务 2、上下文 1、新增异常处理 3）。
+
+## 本次实跑验证
+
+在 jsj2434 目录执行：
+
+```powershell
+$env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
+.\mvnw.cmd -B clean test
+```
+
+结果：BUILD SUCCESS；Tests run: 11, Failures: 0, Errors: 0, Skipped: 0。
+
+- 首次普通 test 因沙箱无权写 Maven 缓存而失败；获得执行权限后下载了 devtools 依赖。
+- 随后的 test 因 target 中旧模板时间戳较新而出现 2 个失败；源码模板 SHA-256 与 demo 一致，clean test 清理残留后全量通过。后续切换版本应先 clean，避免旧资源或类残留。
+- 三个模板已逐一做 SHA-256 对比；控制器、模型、服务源码除包名前缀外与 demo 一致。
+- MockMvc 已验证登录转发目标、失败登录、主页模型和 session 展示差异、两种退出响应及不销毁会话、旧 URL 和旧样式 404、额外账号被拒绝。未进行浏览器端人工验收。
+
+## 按源项目保留的限制
+
+主页使用 session.username，但登录没有写入 session，故默认不显示用户名；/toMain 仅添加模型属性 username。两种退出均未销毁会话，也未添加访问控制、注册、数据库或 Spring Security。这些是用户确认保留的课程实验行为。
+
+## 工作区与交付边界
+
+- 本次只修改 jsj2434、README.md 和 HANDOFF.md；未提交、未推送。
+- 开始时已有 demo 原目录文件删除、未跟踪的 demo/demo、demo.zip 修改，以及 Test34、shiyan2 等其他改动，均原样保留；压缩包和 LICENSE 未触碰。
+- demo 当前实际源码在 demo/demo，与以下旧文档的注册/头像版本不同，本次未运行 demo 测试。
+- 以下 2026-10-09 记录仅用于历史追溯，其中“当前状态”“下一步任务”和旧测试结果不再是现行操作指令；不要据此恢复旧安全配置或旧接口。
+
+---
+
 # HANDOFF.md — 交接状态（主文档）
 
 > 交接三件套：[AGENTS.md](AGENTS.md)（规则）→ **本文**（状态与下一步）→ [README.md](README.md)（全貌）。
