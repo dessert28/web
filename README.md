@@ -9,7 +9,7 @@
 | 项目 | 位置 | 技术栈 | 状态 |
 | --- | --- | --- | --- |
 | 用户注册/登录示例 | `demo/` | Spring Boot 4.1.1 · Java 17 · Thymeleaf · BCrypt | ✅ 完成，**9/9 测试通过**（2026-10-09 实测） |
-| demo 课程登录实验复刻 | `jsj2434/` | Spring Boot 4.0.8 · Java 21 · Thymeleaf · Lombok | ✅ 14/14 测试通过（2026-10-16 实测） |
+| demo 课程登录实验复刻 | `jsj2434/` | Spring Boot 4.0.8 · Java 21 · Thymeleaf · Lombok | ✅ 16/16 测试通过（2026-10-16 实测） |
 | Maven 空壳工程 | `Test34/` | Java 21 · mysql-connector-j 8.4.0 | ⬜ 只有 Hello World，无 Maven Wrapper |
 | ASP.NET 空模板 | `sy1/` | .NET Framework 4.7.2 · IIS Express · Docker | ⬜ 模板未写任何页面 |
 | 早期快照 | `demo.zip`、`jsj2434.rar` | — | 📦 与当前目录内容**不一致**，勿当源码用 |
@@ -108,9 +108,9 @@ D:\project\githubclone\web\        ← git 仓库根（remote: git@github.com:de
 - 原 /toLogin、/main、/test/{username}/{password} 已移除；没有 Spring Security 认证链。
 - 源项目行为原样保留：模板读取 session.username，登录未写入 session，故用户名可为空；退出不销毁会话，主页可直接访问。
 
-新增 GlobalExceptionHandler，限定处理 com.zjsru.controller 下的空指针、算术及其他异常，返回中文文本响应正文（HTTP 200），同时输出异常堆栈。测试用异常接口不进入正式应用。
+新增 GlobalExceptionHandler，限定处理 com.zjsru.controller 下的空指针、算术及其他异常，通过 Result<String> 返回 JSON（code、msg、data），异常业务码为 500，msg 为异常类型提示加异常详情，data 显式为 null；HTTP 状态仍为 200，同时输出异常堆栈。Result.success(data) 返回业务码 200、消息“操作成功”和传入的数据。GET /testException 是可直接在浏览器访问的整数除零演示接口，返回上述失败 JSON；/test-exceptions/* 仍仅供自动化测试。
 
-保留全部 4 个原有测试文件并新增异常处理测试，2026-10-16 使用 Java 21 实跑 ` .\mvnw.cmd -B clean test `：**BUILD SUCCESS，14/14 通过**。涵盖页面、内部转发、模型/session 差异、退出响应、旧接口移除及账号校验。
+保留全部 4 个原有测试文件并新增异常处理测试，2026-10-16 使用 Java 21 实跑 ` .\mvnw.cmd -B clean test `：**BUILD SUCCESS，16/16 通过**。涵盖页面、内部转发、模型/session 差异、退出响应、旧接口移除及账号校验。
 
 ### 2.3 `Test34/` — Maven 空壳工程
 
@@ -159,7 +159,7 @@ $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-17.0.12'
 # jsj2434：跑测试（JDK 21）
 cd D:\project\githubclone\web\jsj2434
 $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
-.\mvnw.cmd -B clean test       # 2026-10-16 实测：Tests run: 14, Failures: 0
+.\mvnw.cmd -B clean test       # 2026-10-16 实测：Tests run: 16, Failures: 0
 
 # jsj2434：启动（http://localhost:8080/ ，登录 admin / 123）
 .\mvnw.cmd spring-boot:run

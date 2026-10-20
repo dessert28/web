@@ -2,6 +2,36 @@
 
 本节优先于后面的历史记录。用户已明确授权用当前磁盘上的 `demo/demo` 完整替换 `jsj2434`，包括移除原 URL 和旧功能；这是本次任务对 AGENTS.md 中相关旧契约规则的明确例外。
 
+## 浏览器异常演示接口（2026-10-16）
+
+- 按用户要求在 UserController 新增 GET /testException，故意执行整数除零。
+- 启动 jsj2434 后访问 http://localhost:8080/testException，全局异常处理器返回 application/json：code=500、msg="算术异常：/ by zero"、data=null；HTTP 状态为 200。
+- 原 /test-exceptions/* 仍仅在测试中提供；此新地址属于正式控制器中的课程演示接口。
+- 新增该地址的 MockMvc 回归测试。Java 21 下在 jsj2434 目录实跑 .\mvnw.cmd -B clean test：BUILD SUCCESS；Tests run: 16, Failures: 0, Errors: 0, Skipped: 0。
+- 保留此前 JSON 与中文注释改动，未提交、未推送。
+
+## 中文注释补充（2026-10-16）
+
+- 本轮为 jsj2434/src 的全部 16 个文件添加或修正中文注释：7 个业务 Java 文件、3 个 HTML 模板、1 个应用配置和 5 个测试文件。
+- 说明启动扫描、依赖注入、表单绑定、模板返回、内部转发、ModelAndView、Lombok、服务接口、Result 泛型和异常匹配等课程知识点。
+- 明确请求模型与 session 的区别、登录不写会话、退出不销毁会话，以及 JSON 业务码与 HTTP 状态的区别；修正了原“模拟数据库查询”的误导性注释。
+- 测试注释解释 MockMvc、专用控制器隔离、JSON null 字段检查和旧接口 404，不修改原断言。HTML 注释独立放置，未修改标签、属性或表单结构。
+- 对比本轮修改前后源码，忽略完整注释行和空行后内容一致，确认未改变业务代码、页面元素或配置项；保留此前未提交的 JSON 响应改动。
+- 实跑验证：在 jsj2434 目录设置 JAVA_HOME=D:\pc\.jdks\graalvm-jdk-21.0.7，执行 .\mvnw.cmd -B clean test，BUILD SUCCESS；Tests run: 15, Failures: 0, Errors: 0, Skipped: 0。
+- 本轮仅修改 jsj2434/src 与本文。其他项目及暂存区已有内容保留，未提交、未推送。添加 HTML 注释后模板不再与源 demo 逐字节一致，页面元素和行为保持原样。
+
+## 异常响应改为 JSON（2026-10-16，当前行为）
+
+本节优先于下方旧的文本响应记录。上轮提交 d853dff 已推送；本轮改动未提交、未推送。
+
+- 新增 com.zjsru.domain.Result<T>，使用 Lombok @Data、@NoArgsConstructor、@AllArgsConstructor，字段为 code、msg、data。
+- success(data) 返回 200、“操作成功”和传入数据；fail(msg) 返回 500、传入消息及 null。
+- 三个异常处理方法统一返回 Result<String>，消息分别为“空指针异常：”“算术异常：”“其他异常：”拼接 e.getMessage()；保留处理范围和 e.printStackTrace()。
+- JSON 由 Spring 自动序列化，Content-Type 为 application/json，失败响应包含显式 data: null；HTTP 状态继续为 200。未配置后端 JSON 缩进，浏览器可用“美观打印”。
+- 更新三个异常测试，新增成功响应序列化测试；空指针消息只校验前缀以兼容 JVM 详情，其余校验完整消息。仅有测试专用接口。
+- 实跑验证：在 jsj2434 目录设置 JAVA_HOME=D:\pc\.jdks\graalvm-jdk-21.0.7，执行 .\mvnw.cmd -B clean test，BUILD SUCCESS；Tests run: 15, Failures: 0, Errors: 0, Skipped: 0。原页面、登录、退出及旧接口 404 回归通过。
+- 仅修改 jsj2434 及 README.md、HANDOFF.md，其他已有工作区改动保留；正常页面和退出接口未改为 JSON。异常详情按课程截图原样返回。
+
 ## 本次提交与推送（2026-10-16）
 
 - 用户明确授权提交并推送 jsj2434 的 demo 复刻、全局异常处理及相关测试，以及 README.md、HANDOFF.md。
@@ -26,7 +56,7 @@
 - 保留项目坐标、Spring Boot 4.0.8、Java 21、启动类、Maven Wrapper 和阿里云镜像；加入源项目的 devtools 与 Lombok 编译配置。
 - 路由为 /、/tologin、/login、/toMain、/logout、/logout2。正确登录内部 forward:/toMain；错误登录返回 login。
 - 仅保留课程演示账号 admin/123；移除额外账号、Users、旧 app.css，以及 /toLogin、/main、/test/{username}/{password}。
-- 保留全部 4 个现有测试文件，按新契约调整断言；当前共 14 个测试（控制器 6、页面 2、服务 2、上下文 1、新增异常处理 3）。
+- 保留全部 4 个现有测试文件，按新契约调整断言；当前共 15 个测试（控制器 6、页面 2、服务 2、上下文 1、异常与成功响应 4）。
 
 ## 本次实跑验证
 

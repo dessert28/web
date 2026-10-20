@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>商品列表</title>
+    <link rel="stylesheet" th:href="@{/css/goods.css}">
+</head>
+<body>
+<main class="list-page">
+    <header class="list-page__header">
+        <h1>商品列表</h1>
+    </header>
+
+    <table class="goods-table">
+        <tbody>
+        <tr th:each="item : ${goodsList}">
+            <td th:text="${item.id}"></td>
+            <td th:text="${item.goodsName}"></td>
+            <td th:text="${item.originalPrice}"></td>
+            <td th:text="${item.discountPrice}"></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

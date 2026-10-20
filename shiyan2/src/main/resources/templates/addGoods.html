@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>添加商品</title>
+    <link rel="stylesheet" th:href="@{/css/goods.css}">
+</head>
+<body>
+<main class="add-page">
+    <header class="add-page__header">
+        <h1>添加商品</h1>
+    </header>
+
+    <form class="goods-form" th:action="@{/shiyan1/addGoods}" th:object="${goods}" method="post">
+        <div class="goods-form__row">
+            <label for="goodsName">商品名称</label>
+            <input id="goodsName" type="text" th:field="*{goodsName}" placeholder="请输入商品名" required>
+        </div>
+
+        <div class="goods-form__row">
+            <label for="originalPrice">商品原价</label>
+            <input id="originalPrice" type="number" th:field="*{originalPrice}" step="0.01" min="0" value="0.0" required>
+        </div>
+
+        <div class="goods-form__row">
+            <label for="discountPrice">商品折扣价</label>
+            <input id="discountPrice" type="number" th:field="*{discountPrice}" step="0.01" min="0" value="0.0" required>
+        </div>
+
+        <div class="goods-form__actions">
+            <span aria-hidden="true"></span>
+            <div>
+                <button class="button button--add" type="submit">添加</button>
+                <button class="button button--reset" type="reset">重置</button>
+            </div>
+        </div>
+    </form>
+</main>
+</body>
+</html>

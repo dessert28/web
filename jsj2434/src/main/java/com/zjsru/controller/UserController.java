@@ -1,6 +1,6 @@
 package com.zjsru.controller;
 
-import com.zjsru.domain.User;
+import com.zjsru.domain.Users;
 import com.zjsru.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.List;
 
 /** 页面控制器：普通返回字符串表示模板名，@ResponseBody 方法则直接输出正文。 */
 @Controller
@@ -29,7 +31,9 @@ public class UserController {
     // @RequestMapping 未限定 HTTP 方法；当前页面使用 POST 提交。
     @RequestMapping("/login")
     public String login(String username, String password) {
-        User user = new User(username, password);
+        Users user = new Users();
+        user.setUsername(username);
+        user.setPassword(password);
         if (userService.login(user)) {
             // 服务端内部转发并沿用请求参数，浏览器地址不会因转发改变。
             // 当前只校验账号，没有创建登录会话或向 session 写入 username。
@@ -38,9 +42,19 @@ public class UserController {
             return "login";
         }
     }
-    /** 请求参数绑定到 User，ModelAndView 同时指定模板名和模型数据。 */
+    /** 查询 users 表全部用户，@ResponseBody 将 List 序列化为 JSON 数组。 */
+    @GetMapping("/selectAllUsers")
+    @ResponseBody
+    public List<Users> selectAllUsers() {
+        // 调用服务层查询所有用户信息
+        List<Users> userList = userService.selectAllUsers();
+        // 返回响应数据，由 Spring 自动序列化为 JSON
+        return userList;
+    }
+
+    /** 请求参数绑定到 Users，ModelAndView 同时指定模板名和模型数据。 */
     @RequestMapping("/toMain")
-    public ModelAndView toMain(User user, ModelAndView modelAndView) {
+    public ModelAndView toMain(Users user, ModelAndView modelAndView) {
         // 仅使用请求参数中的用户名，没有连接数据库或查询用户资料。
         // 模型 username 与 session.username 不同，主页模板读取的是后者。
         modelAndView.setViewName("main");
