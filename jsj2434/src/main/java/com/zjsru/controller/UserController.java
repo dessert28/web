@@ -4,47 +4,65 @@ import com.zjsru.domain.User;
 import com.zjsru.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+/** 页面控制器：普通返回字符串表示模板名，@ResponseBody 方法则直接输出正文。 */
 @Controller
 public class UserController {
+    // 注入 UserService 实现，将账号校验交给服务层。
     @Autowired
     private UserService userService;
-    //请求主页
+    /** 返回欢迎页，index 根据配置解析为 templates/index.html。 */
     @RequestMapping("/")
     public String index() {
         return "index";
     }
-    //请求登录页面
+    /** 返回登录表单页面。 */
     @RequestMapping("/tologin")
     public String tologin() {
         return "login";
     }
-    //处理登录请求
+    /** 按参数名绑定表单 username、password，并调用服务校验账号。 */
+    // @RequestMapping 未限定 HTTP 方法；当前页面使用 POST 提交。
     @RequestMapping("/login")
     public String login(String username, String password) {
         User user = new User(username, password);
         if (userService.login(user)) {
+            // 服务端内部转发并沿用请求参数，浏览器地址不会因转发改变。
+            // 当前只校验账号，没有创建登录会话或向 session 写入 username。
             return "forward:/toMain";
         } else {
             return "login";
         }
     }
+    /** 请求参数绑定到 User，ModelAndView 同时指定模板名和模型数据。 */
     @RequestMapping("/toMain")
     public ModelAndView toMain(User user, ModelAndView modelAndView) {
-        //模拟从数据库查询用户信息，这里简单地使用用户传入的用户名作为示例
+        // 仅使用请求参数中的用户名，没有连接数据库或查询用户资料。
+        // 模型 username 与 session.username 不同，主页模板读取的是后者。
         modelAndView.setViewName("main");
         modelAndView.addObject("username", user.getUsername());
         return modelAndView;
     }
 
+    /** 浏览器访问 /testException，故意触发整数除零，由全局处理器返回异常 JSON。 */
+    @GetMapping("/testException")
+    @ResponseBody
+    public String testException() {
+        int divisor = 0;
+        return String.valueOf(10 / divisor);
+    }
+
+    /** @ResponseBody 将字符串直接写入响应；这里没有销毁会话或执行认证注销。 */
     @RequestMapping("/logout")
     @ResponseBody
     public String logout() {
         return "退出成功";
     }
+    /** 返回登录页，通过模型 message 显示退出提示；同样没有销毁会话。 */
     @RequestMapping("/logout2")
     public ModelAndView logout2(ModelAndView modelAndView) {
         modelAndView.setViewName("login");

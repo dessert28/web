@@ -16,6 +16,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 
+/** 沿用原测试类名；现用于验证课程登录流程，没有 Spring Security 认证链。 */
+// 加载应用上下文，自动配置 MockMvc，在不启动真实端口的情况下模拟 HTTP 请求。
 @SpringBootTest
 @AutoConfigureMockMvc
 class UserControllerSecurityTest {
@@ -23,12 +25,14 @@ class UserControllerSecurityTest {
     private MockMvc mockMvc;
 
     @Test
+    // 验证欢迎页和登录页的状态码及视图名。
     void publicPagesAreAccessible() throws Exception {
         mockMvc.perform(get("/")).andExpect(status().isOk()).andExpect(view().name("index"));
         mockMvc.perform(get("/tologin")).andExpect(status().isOk()).andExpect(view().name("login"));
     }
 
     @Test
+    // MockMvc 验证转发目标，不自动执行容器的二次转发；并检查没有创建会话。
     void validLoginForwardsToMainWithoutCreatingSession() throws Exception {
         var result = mockMvc.perform(post("/login").param("username", "admin").param("password", "123"))
                 .andExpect(status().isOk())
@@ -39,6 +43,7 @@ class UserControllerSecurityTest {
     }
 
     @Test
+    // 错误密码及缺失参数都应回到登录页。
     void invalidLoginRendersLoginPage() throws Exception {
         mockMvc.perform(post("/login").param("username", "admin").param("password", "wrong"))
                 .andExpect(status().isOk()).andExpect(view().name("login"));
@@ -47,6 +52,7 @@ class UserControllerSecurityTest {
     }
 
     @Test
+    // 模型属性仅用于当前视图；session 属性独立存在，模板实际读取 session.username。
     void toMainCarriesUsernameInModelButTemplateReadsSession() throws Exception {
         mockMvc.perform(get("/toMain").param("username", "alice"))
                 .andExpect(status().isOk()).andExpect(view().name("main"))
@@ -60,6 +66,7 @@ class UserControllerSecurityTest {
     }
 
     @Test
+    // 旧 URL 应保持 404，不能被全局异常处理改成 HTTP 200。
     void oldEndpointsAreRemoved() throws Exception {
         for (String path : new String[]{"/toLogin", "/main", "/test/alice/secret"}) {
             mockMvc.perform(get(path)).andExpect(status().isNotFound());
@@ -67,6 +74,7 @@ class UserControllerSecurityTest {
     }
 
     @Test
+    // 验证文本与页面两种响应，并明确当前退出演示保留原会话。
     void logoutEndpointsMatchDemoAndPreserveSession() throws Exception {
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("username", "alice");

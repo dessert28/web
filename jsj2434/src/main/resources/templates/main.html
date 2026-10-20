@@ -6,7 +6,9 @@
 </head>
 <body>
 <h1>欢迎来到我的网站，这里是主页</h1>
+<!-- 此处读取会话属性；登录未设置 session，控制器的模型 username 不会自动写入会话。 -->
 欢迎你：<span th:text="${session.username}"></span>
+<!-- 两种退出演示：第一个返回文本，第二个返回带提示的登录页；均不销毁会话。 -->
 <a href="/logout">退出登录</a>
 <a href="/logout2">退出登录2</a>
 </body>
