@@ -6,10 +6,10 @@
 
 ## 项目一览
 
-| 目录 | 内容 | 技术栈 | 构建 / 测试（2026-10-20 实测） |
+| 目录 | 内容 | 技术栈 | 构建 / 测试（2026-10-23 实测） |
 | --- | --- | --- | --- |
 | [`demo/`](demo/) | 课堂参考实现：登录模块（index / login / main） | Spring Boot 4.1.1 · Java 21 · Thymeleaf | ✅ 1/1 通过（JDK 21） |
-| [`jsj2434/`](jsj2434/) | 课程实验复刻 + MyBatis/MySQL 认证 + 全局异常处理 | Spring Boot 4.0.8 · Java 21 · Thymeleaf · MyBatis · MySQL 8 | ✅ 16/16 通过（JDK 21） |
+| [`jsj2434/`](jsj2434/) | 课程实验复刻 + MyBatis/MySQL 认证 + CRUD 接口 + 全局异常处理 | Spring Boot 4.0.8 · Java 21 · Thymeleaf · MyBatis · MySQL 8 | ✅ 18/18 通过（JDK 21） |
 | [`shiyan2/`](shiyan2/) | 实验二：Thymeleaf 商品信息管理（添加 + 列表） | Spring Boot 4.1.1 · Java 17 · Thymeleaf | ✅ 1/1 通过（JDK 17） |
 | [`Test34/`](Test34/) | Maven 练习空壳：Hello World + MySQL 驱动 | Java 21 · mysql-connector-j 8.4.0 | ⚙️ 可编译，无测试 |
 | [`sy1/`](sy1/) | VS2022 ASP.NET Web 应用空模板 | .NET Framework 4.7.2 · IIS Express | ⛔ 未开发 |
@@ -24,13 +24,13 @@ web/
 │   └── src/test/java/com/example/demo/DemoApplicationTests.java
 ├── jsj2434/                  课程实验复刻 + 数据库认证（com.zjsru）
 │   ├── src/main/java/com/zjsru/
-│   │   ├── controller/UserController.java          7 个页面 / 演示路由
+│   │   ├── controller/UserController.java          页面 / 登录 / Restful / CRUD 路由
 │   │   ├── exception/GlobalExceptionHandler.java   统一 Result JSON 异常响应
-│   │   ├── mapper/UserMapper.java                  MyBatis 查询 users 表
+│   │   ├── mapper/UserMapper.java                  MyBatis 查询与增删改 tb_users 表
 │   │   ├── service/{UserService,UserServiceimpl}.java
 │   │   └── domain/{Users,Result}.java
-│   ├── src/main/resources/{application.properties,schema.sql,templates/{index,login,main}.html}
-│   └── src/test/java/com/zjsru/                    5 个测试类 / 16 个用例
+│   ├── src/main/resources/{application.properties,mybatis.sql,templates/{index,login,main}.html,static/crud-test.html}
+│   └── src/test/java/com/zjsru/                    5 个测试类 / 18 个用例
 ├── shiyan2/                  实验二：商品信息管理（com.example.shiyan2）
 │   ├── src/main/java/com/example/shiyan2/{controller,model,service}
 │   ├── src/main/resources/{templates/{addGoods,goodsList}.html,static/css/goods.css}
@@ -51,7 +51,7 @@ web/
 | --- | --- |
 | JDK | `demo`、`jsj2434`、`Test34` 需要 **JDK 21**（`D:\pc\.jdks\graalvm-jdk-21.0.7`）；`shiyan2` 需要 **JDK 17**（`D:\pc\.jdks\graalvm-jdk-17.0.12`）。PATH 上的 JDK 15 不能用于构建 |
 | Maven | 系统没有全局 `mvn`，一律用各项目自带的 `mvnw.cmd`（wrapper 3.3.4 / Maven 3.9.16）。`.mvn/settings.xml` 把依赖镜像到阿里云 |
-| MySQL | 只有 `jsj2434` 需要：MySQL 8，`localhost:3306`，账号 `root/root`，库名 `jsj2434` |
+| MySQL | 只有 `jsj2434` 需要：MySQL 8，`localhost:3306`，账号 `root/root`，库名 `mybatis`（由 `mybatis.sql` 初始化） |
 | 端口 | `demo` 与 `jsj2434` 默认都占用 8080，不要同时启动；需要并行时加 `--server.port=8081` |
 
 ## 快速开始
@@ -65,7 +65,7 @@ $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
 # jsj2434：实验复刻 + 数据库认证
 cd jsj2434
 $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
-.\mvnw.cmd spring-boot:run        # 启动时自动执行 schema.sql 建表
+.\mvnw.cmd spring-boot:run        # 启动时自动执行 mybatis.sql 建表
 
 # shiyan2：实验二
 cd shiyan2
@@ -100,21 +100,30 @@ cd <项目目录>
 
 在 `demo/` 的基础上扩展：
 
-- **登录改为查库**：`UserMapper.selectByUsername` 查询 `users` 表，`UserServiceimpl` 比对数据库中的密码，不再使用硬编码账号。
-- **自动建表**：`src/main/resources/schema.sql` 由 `spring.sql.init.mode=always` 在启动时执行，建表并写入演示账号（`admin/123`、`alice/123456`），脚本是幂等写法。
+- **登录改为查库**：`UserMapper.selectByUsername` 查询 `tb_users` 表，`UserServiceimpl` 比对数据库中的密码，不再使用硬编码账号。
+- **自动建表**：`src/main/resources/mybatis.sql` 由 `spring.sql.init.mode=always` 在启动时执行，建表并导入演示数据（`tb_users` 中 `admin/123` 等），脚本自带 `DROP TABLE IF EXISTS`，每次启动重建。
+- **CRUD 接口**：新增用户的增删改查（`/selectAllUsers`、`/queryUserById/{id}`、`/insertUser`、`/updateUser`、`/deleteUserById/{id}`），并附带本地联调页 `static/crud-test.html`。
 - **统一异常响应**：`GlobalExceptionHandler` 捕获控制器里的空指针、算术和其他异常，统一返回 `Result{code=500, msg, data=null}` 的 JSON，HTTP 状态仍是 200。
 
 | 方法 | 路径 | 行为 |
 | --- | --- | --- |
 | GET | `/` | 欢迎页 |
 | GET | `/tologin` | 登录表单 |
-| POST | `/login` | 查 `users` 表校验，成功内部转发 `/toMain`，失败回 `login` |
+| POST | `/login` | 查 `tb_users` 表校验，成功内部转发 `/toMain`，失败回 `login` |
 | GET/POST | `/toMain` | 主页，模型带 `username` |
-| GET | `/logout` | 文本“退出成功” |
+| GET | `/logout` | 返回硬编码 `Users`（张三 / 123）的 JSON |
 | GET | `/logout2` | 登录页 + `message=退出成功` |
 | GET | `/testException` | 故意整数除零，演示全局异常处理的 JSON 响应 |
+| GET | `/test/{name}/{password}` | Restful 路径参数绑定演示，渲染 `main` |
+| GET | `/selectAllUsers` | 查询 `tb_users` 全部用户，返回 JSON 数组 |
+| GET | `/queryUserById/{id}` | 按主键查询用户，返回 JSON |
+| GET | `/queryUserByNameAndPassword/{username}/{password}` | 按用户名 + 明文密码查询，返回 JSON |
+| POST | `/insertUser` | 新增用户，返回受影响行数 |
+| PUT | `/updateUser` | 按 id 全字段更新用户，返回受影响行数 |
+| DELETE | `/deleteUserById/{id}` | 按 id 删除用户，返回受影响行数 |
+| GET | `/crud-test.html` | 临时可视化 CRUD 联调页 |
 
-测试 16 个：页面 2、控制器流程 6、服务 2、上下文 1、异常处理 5。
+测试 18 个：页面 2、控制器流程 7、服务 3、上下文 1、异常处理 5。
 
 ### shiyan2/ — 实验二：商品信息管理
 
@@ -142,11 +151,11 @@ VS2022 新建的 ASP.NET Web Application（.NET Framework 4.7.2），只有 `Ass
 | 项目 | 命令 | JDK | 结果 |
 | --- | --- | --- | --- |
 | `demo` | `.\mvnw.cmd -B clean test` | 21 | BUILD SUCCESS，Tests run: 1 |
-| `jsj2434` | `.\mvnw.cmd -B clean test` | 21 | BUILD SUCCESS，Tests run: 16 |
+| `jsj2434` | `.\mvnw.cmd -B clean test` | 21 | BUILD SUCCESS，Tests run: 18 |
 | `shiyan2` | `.\mvnw.cmd -B clean test` | 17 | BUILD SUCCESS，Tests run: 1 |
 | `Test34` | `.\mvnw.cmd -B clean compile` | 21 | BUILD SUCCESS（无测试） |
 
-`jsj2434` 的测试会连本机 MySQL，跑之前确认 MySQL 8 已启动；表结构由 `schema.sql` 自动创建。
+`jsj2434` 的测试会连本机 MySQL，跑之前确认 MySQL 8 已启动；表结构由 `mybatis.sql` 自动创建。
 
 ## 已知限制
 

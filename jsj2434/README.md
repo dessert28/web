@@ -11,7 +11,7 @@
 ```powershell
 $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
 .\mvnw.cmd spring-boot:run      # http://localhost:8080/
-.\mvnw.cmd -B clean test        # 16 个用例
+.\mvnw.cmd -B clean test        # 18 个用例
 ```
 
 前置条件：本机 MySQL 8 已启动，`localhost:3306`，账号 `root/root`；库不存在时会按连接串里的 `createDatabaseIfNotExist` 自动创建。
@@ -46,6 +46,7 @@ $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
 | GET | `/logout` | 返回硬编码 `Users`（张三 / 123）的 JSON，不销毁会话 |
 | GET | `/logout2` | 登录页 + `message=退出成功` |
 | GET | `/testException` | 故意整数除零，演示异常 JSON |
+| GET | `/test/{name}/{password}` | Restful 路径参数绑定演示，渲染 `main` |
 | GET | `/selectAllUsers` | 查询 `tb_users` 全部用户，返回 JSON 数组 |
 | GET | `/queryUserById/{id}` | 按主键查询用户，返回 JSON |
 | GET | `/queryUserByNameAndPassword/{username}/{password}` | 按用户名 + 明文密码查询，返回 JSON |
