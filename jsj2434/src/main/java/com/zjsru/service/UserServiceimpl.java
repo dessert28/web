@@ -31,7 +31,7 @@ public class UserServiceimpl implements UserService {
         return users;
     }
     @Override
-    public Users selectUserById(Integer id) {
+    public Users queryUserById(Integer id) {
         Users users = userMapper.selectUserById(id);
         return users;
     }
@@ -44,5 +44,20 @@ public class UserServiceimpl implements UserService {
     public Users queryUserByNameAndPassword(String username, String password) {
         Users users = userMapper.selectUserByNameAndPassword(username, password);
         return users;
+    }
+
+    @Override
+    public int insertUser(Users user) {
+        return userMapper.insertUser(user);
+    }
+
+    @Override
+    public int updateUser(Users user) {
+        return userMapper.updateUser(user);
+    }
+
+    @Override
+    public int deleteUserById(Long id) {
+        return userMapper.deleteUserById(id);
     }
 }

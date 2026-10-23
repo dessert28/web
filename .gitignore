@@ -1,0 +1,36 @@
+# 构建产物
+target/
+bin/
+obj/
+build/
+dist/
+
+# IDE / 编辑器
+.idea/
+.vs/
+.vscode/
+*.suo
+*.vsidx
+*.user
+*.iml
+*.iws
+*.ipr
+
+# Maven Wrapper 的 jar 由脚本下载，不入库
+.mvn/wrapper/maven-wrapper.jar
+
+# Windows 会话与本地环境残留
+.acl-recovery/
+.verify/
+*.log
+
+# 写实验报告时的中间产物，只保留在本地
+shiyan2/report-work/
+
+# 本地数据与上传
+demo/data/
+demo/uploads/
+
+# 系统文件
+.DS_Store
+Thumbs.db

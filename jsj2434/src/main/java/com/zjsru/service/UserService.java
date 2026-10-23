@@ -13,7 +13,16 @@ public interface UserService {
     List<Users> selectAllUsers();
 
     /** 按主键查询单个用户。 */
-    Users selectUserById(Integer id);
+    Users queryUserById(Integer id);
     Users queryUserByName(String username);
     Users queryUserByNameAndPassword(String username, String password);
+
+    /** 新增用户，返回受影响行数。 */
+    int insertUser(Users user);
+
+    /** 按主键更新用户，返回受影响行数。 */
+    int updateUser(Users user);
+
+    /** 按主键删除用户，返回受影响行数。 */
+    int deleteUserById(Long id);
 }

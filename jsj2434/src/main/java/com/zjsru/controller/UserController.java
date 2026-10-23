@@ -4,8 +4,11 @@ import com.zjsru.domain.Users;
 import com.zjsru.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -93,20 +96,60 @@ public class UserController {
     @GetMapping("/selectAllUsers")
     @ResponseBody
     public List<Users> selectAllUsers() {
-        // 调用服务层查询所有用户信息
+        //1.调用业务逻辑方法
         List<Users> usersList = userService.selectAllUsers();
-        // 返回响应数据，由 Spring 自动序列化为 JSON
+        //2.返回结果给前端
         return usersList;
     }
 
     /** 按路径 id 查询单个用户，@ResponseBody 将对象序列化为 JSON。 */
-    @GetMapping("/selectUserById/{id}")
+    @GetMapping("/queryUserById/{id}")
     @ResponseBody
-    public Users selectUserById(@PathVariable int id) {
-        // 调用服务层按主键查询用户信息
-        Users users = userService.selectUserById(id);
-        // 返回响应数据，由 Spring 自动序列化为 JSON
+    public Users queryUserById(@PathVariable int id) {
+        //1.调用业务逻辑方法
+        Users users = userService.queryUserById(id);
+        //2.返回结果给前端
         return users;
+    }
+
+    /** 根据用户名和密码查询用户信息，两个路径参数依次绑定。 */
+    @GetMapping("/queryUserByNameAndPassword/{username}/{password}")
+    @ResponseBody
+    public Users queryUserByNameAndPassword(@PathVariable("username") String username, @PathVariable("password") String password) {
+        //1.调用业务逻辑方法
+        Users users = userService.queryUserByNameAndPassword(username, password);
+        //2.返回结果给前端
+        return users;
+    }
+
+    /** 新增用户：表单参数绑定到 Users，返回受影响行数。 */
+    @PostMapping("/insertUser")
+    @ResponseBody
+    public int insertUser(Users user) {
+        //1.调用业务逻辑方法
+        int rows = userService.insertUser(user);
+        //2.返回结果给前端
+        return rows;
+    }
+
+    /** 修改用户：按 id 更新其余字段，返回受影响行数。 */
+    @PutMapping("/updateUser")
+    @ResponseBody
+    public int updateUser(Users user) {
+        //1.调用业务逻辑方法
+        int rows = userService.updateUser(user);
+        //2.返回结果给前端
+        return rows;
+    }
+
+    /** 删除用户：按路径 id 删除，返回受影响行数。 */
+    @DeleteMapping("/deleteUserById/{id}")
+    @ResponseBody
+    public int deleteUserById(@PathVariable Long id) {
+        //1.调用业务逻辑方法
+        int rows = userService.deleteUserById(id);
+        //2.返回结果给前端
+        return rows;
     }
 
 }

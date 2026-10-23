@@ -1,2 +1,0 @@
-# 项目事实底稿
-本报告依据本地 shiyan2 当前源码及2026年10月15日实际运行结果。工程为 Spring Boot 4.1.1、Java 17、Thymeleaf 和 Web MVC 应用，没有数据库。GoodsController 仅包含 toAdd 和 addGoods 两个方法，类级映射为 /shiyan1，并通过 @Autowired 注入 GoodsService。Goods 包含 Long id、String goodsName 和两个 BigDecimal 价格字段。GoodsServiceImpl 使用静态 ArrayList 保存商品、静态 nextId 分配编号。两个模板分别用 th:object、th:field 绑定表单，用 th:each、th:text 渲染列表。现有自动测试仅包含 contextLoads；本次 Maven 全量测试1/1通过。浏览器验证了重置、两次商品提交及列表保留。身份字段未知，保留空白。

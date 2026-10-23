@@ -1,5 +1,6 @@
 package com.zjsru.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -36,6 +37,19 @@ class UserServiceTest {
         assertFalse(userService.login(credentials("admin", "wrong")));
         assertFalse(userService.login(credentials("guest", "123")));
         assertFalse(userService.login(new Users()));
+    }
+
+    @Test
+    // 新增、修改、删除应委托给 Mapper，并原样返回受影响行数。
+    void writeOperationsDelegateToMapper() {
+        Users user = credentials("bob", "456");
+        user.setId(9L);
+        when(userMapper.insertUser(user)).thenReturn(1);
+        when(userMapper.updateUser(user)).thenReturn(1);
+        when(userMapper.deleteUserById(9L)).thenReturn(1);
+        assertEquals(1, userService.insertUser(user));
+        assertEquals(1, userService.updateUser(user));
+        assertEquals(1, userService.deleteUserById(9L));
     }
 
     // @Data 未生成全参构造，通过 setter 组装测试账号。

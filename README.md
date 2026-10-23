@@ -1,186 +1,168 @@
-> **2026-10-16 工作区更新**：jsj2434 已按当前 demo/demo 替换，现行说明见第 2.2 节及 HANDOFF.md 顶部。demo 的实际源码现位于 demo/demo，是简易登录课程实验；下面第 2.1 节、目录地图及 demo 相关命令保留的是历史注册/头像版本资料，不代表当前磁盘内容。jsj2434 的旧 SecurityConfig、Users 和 app.css 目录描述也已失效，以第 2.2 节为准。
-# web — 多项目练习仓库（总览）
+# web — Java Web 课程练习仓库
 
-> **这是什么**：一个 Git 仓库，里面并排放了 4 个互不相关的练习/作业项目，外加 2 个早期快照压缩包和一份 GPL-3.0 许可证。
-> 各项目之间**没有**共享代码、父子模块或统一构建，只是一个存放目录，请按“独立项目”对待。
->
-> **交接入口**：[AGENTS.md](AGENTS.md)（规则与红线）→ [HANDOFF.md](HANDOFF.md)（当前状态、已知问题、下一步）→ 本文（全貌）。
+《Web 开发技术》课程练习的合集：一份课堂参考实现、三个 Spring Boot 练习工程、一个 Maven 空壳工程和一个 ASP.NET 空模板，另有早期归档包与许可证。
 
-| 项目 | 位置 | 技术栈 | 状态 |
+各工程**互相独立**：没有共享模块、父子 POM 或统一构建，请分别打开、分别构建。
+
+## 项目一览
+
+| 目录 | 内容 | 技术栈 | 构建 / 测试（2026-10-20 实测） |
 | --- | --- | --- | --- |
-| 用户注册/登录示例 | `demo/` | Spring Boot 4.1.1 · Java 17 · Thymeleaf · BCrypt | ✅ 完成，**9/9 测试通过**（2026-10-09 实测） |
-| demo 课程登录实验复刻 | `jsj2434/` | Spring Boot 4.0.8 · Java 21 · Thymeleaf · Lombok | ✅ 16/16 测试通过（2026-10-16 实测） |
-| Maven 空壳工程 | `Test34/` | Java 21 · mysql-connector-j 8.4.0 | ⬜ 只有 Hello World，无 Maven Wrapper |
-| ASP.NET 空模板 | `sy1/` | .NET Framework 4.7.2 · IIS Express · Docker | ⬜ 模板未写任何页面 |
-| 早期快照 | `demo.zip`、`jsj2434.rar` | — | 📦 与当前目录内容**不一致**，勿当源码用 |
-| 许可证 | `LICENSE` | GPL-3.0 全文 | — |
+| [`demo/`](demo/) | 课堂参考实现：登录模块（index / login / main） | Spring Boot 4.1.1 · Java 21 · Thymeleaf | ✅ 1/1 通过（JDK 21） |
+| [`jsj2434/`](jsj2434/) | 课程实验复刻 + MyBatis/MySQL 认证 + 全局异常处理 | Spring Boot 4.0.8 · Java 21 · Thymeleaf · MyBatis · MySQL 8 | ✅ 16/16 通过（JDK 21） |
+| [`shiyan2/`](shiyan2/) | 实验二：Thymeleaf 商品信息管理（添加 + 列表） | Spring Boot 4.1.1 · Java 17 · Thymeleaf | ✅ 1/1 通过（JDK 17） |
+| [`Test34/`](Test34/) | Maven 练习空壳：Hello World + MySQL 驱动 | Java 21 · mysql-connector-j 8.4.0 | ⚙️ 可编译，无测试 |
+| [`sy1/`](sy1/) | VS2022 ASP.NET Web 应用空模板 | .NET Framework 4.7.2 · IIS Express | ⛔ 未开发 |
 
----
-
-## 1. 目录地图
+## 目录结构
 
 ```
-D:\project\githubclone\web\        ← git 仓库根（remote: git@github.com:dessert28/web.git，分支 main）
-├── demo\                          Spring Boot 用户注册/登录示例（Java 17）
-│   ├── src\main\java\com\example\demo\
-│   │   ├── DemoApplication.java          启动类
-│   │   ├── controller\UserController.java     页面：登录/注册/主页/退出
-│   │   ├── controller\UserApiController.java  JSON：/api/register|login|me|logout
-│   │   ├── service\UserService.java           校验 + BCrypt + JSON 持久化
-│   │   ├── model\{UserAccount,UserProfile,Users,ApiResult}.java
-│   │   └── config\WebConfig.java              映射 /uploads/** 静态资源
-│   ├── src\main\resources\{application.properties, templates\, static\}
-│   ├── src\test\java\com\example\demo\    4 个测试类 / 9 个用例
-│   ├── .mvn\{settings.xml, maven.config, wrapper\}   阿里云镜像 + Maven Wrapper
-│   ├── mvnw / mvnw.cmd / pom.xml / run-tests.bat
-│   └── target\                   构建产物（已被 .gitignore 忽略）
-├── jsj2434\                       Spring Security 登录站点（Java 21）
-│   ├── src\main\java\com\zjsru\
-│   │   ├── Jsj2434Application.java        启动类
-│   │   ├── config\SecurityConfig.java     安全规则（见 3.2）
-│   │   ├── controller\UserController.java 3 个页面路由
-│   │   ├── service\UserService.java       内存 UserDetailsService（硬编码 admin）
-│   │   └── domain\Users.java              领域对象（当前未被登录流程使用）
-│   ├── src\main\resources\templates\{index,login,main}.html + static\css\app.css
-│   ├── src\test\java\com\zjsru\           4 个测试类 / 12 个用例
-│   └── target\jsj2434-0.0.1-SNAPSHOT.jar  已打包的可执行 jar（2026-09-29）
-├── Test34\                        Maven 空壳：pom.xml + Main.java + .mvn\.gitkeep（无 mvnw）
-├── sy1\                           VS2022 ASP.NET Web 应用模板（.NET Framework 4.7.2）+ Docker 支持
-├── demo.zip                       53 项的早期 demo 快照（旧包结构，与 demo\ 不一致）
-├── jsj2434.rar                    早期 jsj2434 快照（本机无解压工具，内容未核对）
-├── LICENSE                        GPL-3.0
-├── README.md / AGENTS.md / HANDOFF.md   本套交接文档
-├── .git\ / .gitignore（无，仓库根没有 .gitignore）
-└── .acl-recovery\                 2026-10-09 会话修复 Windows 文件权限时的备份与回滚脚本（见 HANDOFF 第 6 节；不属于项目，可删）
+web/
+├── demo/                     课堂参考实现（com.example.demo）
+│   ├── src/main/java/com/example/demo/{controller,domain,service}
+│   ├── src/main/resources/{application.properties,templates/{index,login,main}.html}
+│   └── src/test/java/com/example/demo/DemoApplicationTests.java
+├── jsj2434/                  课程实验复刻 + 数据库认证（com.zjsru）
+│   ├── src/main/java/com/zjsru/
+│   │   ├── controller/UserController.java          7 个页面 / 演示路由
+│   │   ├── exception/GlobalExceptionHandler.java   统一 Result JSON 异常响应
+│   │   ├── mapper/UserMapper.java                  MyBatis 查询 users 表
+│   │   ├── service/{UserService,UserServiceimpl}.java
+│   │   └── domain/{Users,Result}.java
+│   ├── src/main/resources/{application.properties,schema.sql,templates/{index,login,main}.html}
+│   └── src/test/java/com/zjsru/                    5 个测试类 / 16 个用例
+├── shiyan2/                  实验二：商品信息管理（com.example.shiyan2）
+│   ├── src/main/java/com/example/shiyan2/{controller,model,service}
+│   ├── src/main/resources/{templates/{addGoods,goodsList}.html,static/css/goods.css}
+│   └── src/test/java/com/example/shiyan2/Shiyan2ApplicationTests.java
+├── Test34/                   Maven 空壳工程（org.example）
+├── sy1/                      ASP.NET Web 空模板
+├── AGENTS.md                 在本仓库工作的规则（改代码前先读）
+├── HANDOFF.md                交接状态与历史记录
+├── README.md                 本文件
+├── demo.zip                  demo 的早期快照（与当前 demo/ 不同源，勿当源码用）
+├── jsj2434.rar               早期 jsj2434 快照（未解压核对）
+└── LICENSE                   GPL-3.0
 ```
 
-## 2. 项目详情
+## 环境要求
 
-### 2.1 `demo/` — 用户注册 / 登录示例
-
-| 项 | 说明 |
+| 组件 | 说明 |
 | --- | --- |
-| 技术栈 | Spring Boot **4.1.1**（parent）、Java **17**、spring-boot-starter-webmvc + thymeleaf、spring-security-crypto（只用 BCrypt，未引入完整 Spring Security） |
-| 启动类 | `com.example.demo.DemoApplication` |
-| 默认端口 | 8080（`application.properties` 未覆盖） |
-| 数据存储 | 进程工作目录下的 `data/users.json` + `uploads/avatars/`，由 `app.storage-root=.` 决定；两项均被 `.gitignore` 忽略 |
+| JDK | `demo`、`jsj2434`、`Test34` 需要 **JDK 21**（`D:\pc\.jdks\graalvm-jdk-21.0.7`）；`shiyan2` 需要 **JDK 17**（`D:\pc\.jdks\graalvm-jdk-17.0.12`）。PATH 上的 JDK 15 不能用于构建 |
+| Maven | 系统没有全局 `mvn`，一律用各项目自带的 `mvnw.cmd`（wrapper 3.3.4 / Maven 3.9.16）。`.mvn/settings.xml` 把依赖镜像到阿里云 |
+| MySQL | 只有 `jsj2434` 需要：MySQL 8，`localhost:3306`，账号 `root/root`，库名 `jsj2434` |
+| 端口 | `demo` 与 `jsj2434` 默认都占用 8080，不要同时启动；需要并行时加 `--server.port=8081` |
 
-**页面路由**（`UserController`）
+## 快速开始
+
+```powershell
+# demo：课堂参考实现
+cd demo
+$env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
+.\mvnw.cmd spring-boot:run        # http://localhost:8080/ ，账号 admin / 123
+
+# jsj2434：实验复刻 + 数据库认证
+cd jsj2434
+$env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
+.\mvnw.cmd spring-boot:run        # 启动时自动执行 schema.sql 建表
+
+# shiyan2：实验二
+cd shiyan2
+$env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-17.0.12'
+.\mvnw.cmd spring-boot:run        # http://localhost:8080/shiyan1/toAdd
+
+# 任意项目跑全量测试
+cd <项目目录>
+.\mvnw.cmd -B clean test
+```
+
+> 没有设置 `JAVA_HOME` 时 `mvnw` 会退回 PATH 上的 JDK 15，构建会直接失败。
+
+## 各项目说明
+
+### demo/ — 课堂参考实现
+
+老师给出的登录示例，`jsj2434` 就是照着它复刻的。账号写死在 `UserServiceimpl` 里（`admin` / `123`）。
 
 | 方法 | 路径 | 行为 |
 | --- | --- | --- |
-| GET | `/`、`/login` | 登录页；支持 `?error` / `?registered` / `?logout` 三种提示 |
-| POST | `/login` | 校验成功后把用户名放进 session（key `LOGIN_USERNAME`），跳 `/home` |
-| GET/POST | `/register` | 注册；失败时回填用户名/邮箱并显示错误 |
-| GET | `/home` | 未登录跳 `/login`；已登录渲染个人主页 |
-| GET/POST | `/logout` | 销毁 session，跳 `/login?logout` |
+| GET | `/` | 欢迎页 `index.html` |
+| GET | `/tologin` | 登录表单 `login.html` |
+| POST | `/login` | 校验成功则内部转发 `/toMain`，失败回到 `login` |
+| GET/POST | `/toMain` | 主页 `main.html`，模型带 `username`；模板实际读 `session.username` |
+| GET | `/logout` | 返回文本“退出成功”，不销毁会话 |
+| GET | `/logout2` | 回到登录页并带 `message=退出成功` |
 
-**JSON 接口**（`UserApiController`，前缀 `/api`）
+原样保留了源项目的行为：登录不写 session，所以主页用户名是空的；两个退出接口都不销毁会话。
 
-| 方法 | 路径 | 说明 |
+### jsj2434/ — 课程实验复刻
+
+在 `demo/` 的基础上扩展：
+
+- **登录改为查库**：`UserMapper.selectByUsername` 查询 `users` 表，`UserServiceimpl` 比对数据库中的密码，不再使用硬编码账号。
+- **自动建表**：`src/main/resources/schema.sql` 由 `spring.sql.init.mode=always` 在启动时执行，建表并写入演示账号（`admin/123`、`alice/123456`），脚本是幂等写法。
+- **统一异常响应**：`GlobalExceptionHandler` 捕获控制器里的空指针、算术和其他异常，统一返回 `Result{code=500, msg, data=null}` 的 JSON，HTTP 状态仍是 200。
+
+| 方法 | 路径 | 行为 |
 | --- | --- | --- |
-| POST | `/api/register` | 请求体 `Users`（`avatarBase64` 支持 `data:` 前缀），返回 `ApiResult` |
-| POST | `/api/login` | 成功后写入同一个 session 属性 |
-| GET | `/api/me` | 未登录返回 `success=false` |
-| POST | `/api/logout` | 退出 |
+| GET | `/` | 欢迎页 |
+| GET | `/tologin` | 登录表单 |
+| POST | `/login` | 查 `users` 表校验，成功内部转发 `/toMain`，失败回 `login` |
+| GET/POST | `/toMain` | 主页，模型带 `username` |
+| GET | `/logout` | 文本“退出成功” |
+| GET | `/logout2` | 登录页 + `message=退出成功` |
+| GET | `/testException` | 故意整数除零，演示全局异常处理的 JSON 响应 |
 
-**业务规则**（`UserService`）：用户名 3–20 位、邮箱正则且 ≤100 字符、密码 ≥6 位、两次密码一致、用户名/邮箱**不区分大小写**查重；头像 ≤2 MB 且按**魔数**判定 PNG/JPG/GIF/WebP（不信任扩展名），存为 `UUID.扩展名`；`users.json` 用“临时文件 + `ATOMIC_MOVE`”原子写入，写失败会回滚内存与头像文件；所有写方法 `synchronized`。密码只存 BCrypt 哈希。
+测试 16 个：页面 2、控制器流程 6、服务 2、上下文 1、异常处理 5。
 
-**测试**（4 个类 / 9 个用例，2026-10-09 实测全绿）
+### shiyan2/ — 实验二：商品信息管理
 
-| 测试类 | 用例数 | 覆盖 |
+Thymeleaf 表单绑定与列表渲染练习，数据保存在 `GoodsServiceImpl` 的静态 `ArrayList` 里（进程重启即清空，不涉及数据库）。
+
+| 方法 | 路径 | 行为 |
 | --- | --- | --- |
-| `DemoApplicationTests` | 1 | 上下文加载 |
-| `UserControllerTests` | 3 | 页面注册→登录→主页→退出全流程、重复邮箱/密码不一致、头像上传 |
-| `UserApiTests` | 2 | JSON 注册/登录/me/退出、非法注册与错误密码 |
-| `UserServiceTests` | 3 | 密码哈希落盘与重载、重复/非法邮箱、头像字节校验（用 `@TempDir`） |
+| GET | `/shiyan1/toAdd` | 渲染添加商品表单 `addGoods.html` |
+| POST | `/shiyan1/addGoods` | 接收 `Goods`（名称、原价、折扣价），加入列表并渲染 `goodsList.html` |
 
-> ⚠️ `run-tests.bat` 名字像批处理，内容其实是 **bash 脚本**（`#!/bin/bash` 且调用 `mvn`），在 Windows 上不能直接运行；请用下面的 `mvnw.cmd` 命令。
+![商品列表页面](shiyan2/goodsList.html.png)
 
-### 2.2 `jsj2434/` — demo 课程登录实验复刻
+添加页截图见 [`shiyan2/addGoods.html.png`](shiyan2/addGoods.html.png)；实验报告在 `shiyan2/` 下（`实验一实验报告.docx`、`实验二_Thymeleaf实验报告.doc`）。
 
-2026-10-16 按用户要求完整复刻当前 `demo/demo` 的页面和业务行为，保留 `com.zjsru:jsj2434`、Spring Boot 4.0.8、Java 21 和现有 Maven 构建配置。
+### Test34/ — Maven 空壳工程
 
-- 模型：普通 User Java Bean；服务：UserService 接口 + UserServiceimpl，仅接受演示账号 admin/123。
-- 页面：index、login、main 与源项目逐字节一致；原 app.css 已移除。
-- GET / 返回 index；GET /tologin 返回 login；POST /login 成功内部转发 /toMain，失败返回 login。
-- /toMain 返回 main，并向模型添加 username；/logout 返回文本“退出成功”；/logout2 返回 login 并附带同名提示。
-- 原 /toLogin、/main、/test/{username}/{password} 已移除；没有 Spring Security 认证链。
-- 源项目行为原样保留：模板读取 session.username，登录未写入 session，故用户名可为空；退出不销毁会话，主页可直接访问。
+`org.example:Test34`，只有一个打印 `Hello and welcome!` 与 1..5 的 `Main.java`，依赖 `mysql-connector-j` 但没有任何连库代码。已补 Maven Wrapper，可以 `.\mvnw.cmd compile`，没有测试。
 
-新增 GlobalExceptionHandler，限定处理 com.zjsru.controller 下的空指针、算术及其他异常，通过 Result<String> 返回 JSON（code、msg、data），异常业务码为 500，msg 为异常类型提示加异常详情，data 显式为 null；HTTP 状态仍为 200，同时输出异常堆栈。Result.success(data) 返回业务码 200、消息“操作成功”和传入的数据。GET /testException 是可直接在浏览器访问的整数除零演示接口，返回上述失败 JSON；/test-exceptions/* 仍仅供自动化测试。
+### sy1/ — ASP.NET Web 应用空模板
 
-保留全部 4 个原有测试文件并新增异常处理测试，2026-10-16 使用 Java 21 实跑 ` .\mvnw.cmd -B clean test `：**BUILD SUCCESS，16/16 通过**。涵盖页面、内部转发、模型/session 差异、退出响应、旧接口移除及账号校验。
+VS2022 新建的 ASP.NET Web Application（.NET Framework 4.7.2），只有 `AssemblyInfo.cs`、`Web.config` 和 Docker 配置，没有任何页面；需要 Windows + IIS Express，本仓库不做构建验证。
 
-### 2.3 `Test34/` — Maven 空壳工程
+## 测试矩阵
 
-- `pom.xml`：`org.example:Test34:1.0-SNAPSHOT`，`maven.compiler.source/target=21`，唯一依赖 `com.mysql:mysql-connector-j:8.4.0`。
-- 唯一源码 `src/main/java/org/example/Main.java`：IDEA 模板生成的 `Hello and welcome!` + 打印 1..5；**没有任何代码连接 MySQL**。
-- **没有 `mvnw`/`mvnw.cmd`**（只有 `.mvn/.gitkeep`），而本机 `mvn` 未安装 → 现状下无法构建，需要先补 Wrapper 或装 Maven。
-- 提交里还带着 `.idea/` 配置（含 Copilot 迁移文件）。
+| 项目 | 命令 | JDK | 结果 |
+| --- | --- | --- | --- |
+| `demo` | `.\mvnw.cmd -B clean test` | 21 | BUILD SUCCESS，Tests run: 1 |
+| `jsj2434` | `.\mvnw.cmd -B clean test` | 21 | BUILD SUCCESS，Tests run: 16 |
+| `shiyan2` | `.\mvnw.cmd -B clean test` | 17 | BUILD SUCCESS，Tests run: 1 |
+| `Test34` | `.\mvnw.cmd -B clean compile` | 21 | BUILD SUCCESS（无测试） |
 
-### 2.4 `sy1/` — ASP.NET Web 应用模板（空）
+`jsj2434` 的测试会连本机 MySQL，跑之前确认 MySQL 8 已启动；表结构由 `schema.sql` 自动创建。
 
-- VS2022（`Visual Studio Version 17`）的 **ASP.NET Web Application (.NET Framework 4.7.2)**，带 Docker 支持与 IIS Express 配置（`https://localhost:44324/`）。
-- `<Compile>` 只有 `Properties/AssemblyInfo.cs`，`<Content>` 只有 `Web.config`：**没有 .aspx / Global.asax / Site.Master 等任何页面**，等价于新建后未开发的模板，无需运行。
-- `Dockerfile` 基于 `mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2019`（Windows 容器；镜像 4.8 与项目的 targetFramework 4.7.2 并不完全对应）。
-- ⚠️ `.vs/`（含 `v17/.suo`、`FileContentIndex/*.vsidx`、`applicationhost.config`）已被**提交进 Git**；`.dockerignore`、`.gitignore` 只忽略 `bin/obj/packages`。建议后续从版本库移除 IDE 状态文件。
+## 已知限制
 
-### 2.5 压缩包与许可证
+- `demo` 与 `jsj2434` 都是课程演示：密码明文比较/存储，数据源账号 `root/root` 写在配置里，没有 CSRF、会话固定防护，不要当真实站点使用。
+- `jsj2434` 保留源示例的行为：登录不写 session、退出不销毁会话，所以主页用户名显示为空。
+- `Test34` 只有 Hello World；`sy1` 只有模板，均非完整应用。
+- `demo.zip` / `jsj2434.rar` 是更早的快照，内容与目录中的源码不一致，不要以它们为准。
+- Windows 受限沙箱里直接构建可能因 `target/` 写入被拒而失败（`AccessDeniedException`），这是会话权限问题，不是工程缺陷。
 
-- `demo.zip`（23,952 B，53 项）：早期 demo 快照，包结构是 `com/example/controller/UserController.java`、没有 service/model 分层，`login.html` 只有 139 B → **与 `demo/` 不是同一份代码**。
-- `jsj2434.rar`（17,134 B）：推测为早期 jsj2434 快照；本机未安装 7-Zip/WinRAR，**内容未核对**。
-- `LICENSE`：GPL-3.0 全文（各子项目未单独声明许可）。
+## 文档与约定
 
-## 3. 本机工具链（2026-10-09 核对）
+- [AGENTS.md](AGENTS.md) — 在本仓库工作的规则与红线，改代码前先读。
+- [HANDOFF.md](HANDOFF.md) — 交接状态、历史记录与遗留问题。
+- 提交信息沿用 `feat(scope): ...`、`fix: ...`、`docs: ...` 的形式，涉及具体项目时带作用域。
+- 推送前请先确认：远端为 `git@github.com:dessert28/web.git`，分支 `main`。
 
-| 组件 | 现状 |
-| --- | --- |
-| `java`（PATH） | Oracle **JDK 15.0.1**（`C:\Program Files\Common Files\Oracle\Java\javapath\java.exe`）——**过旧，两个 Spring Boot 项目都不能用它构建** |
-| `JAVA_HOME` | **未设置** |
-| 可用 JDK | `D:\pc\.jdks\graalvm-jdk-17.0.12`（给 demo）、`D:\pc\.jdks\graalvm-jdk-21.0.7`（给 jsj2434 / Test34）；另有 `C:\Users\dessert\.jdks\corretto-18.0.2` |
-| `mvn` | **未安装**，不在 PATH |
-| Maven Wrapper | `demo`、`jsj2434` 各有 `mvnw.cmd`（wrapper 3.3.4，`distributionType=only-script`，无需 jar）；发行版 **apache-maven-3.9.16** 已缓存在 `C:\Users\dessert\.m2\wrapper\dists\` |
-| 本地仓库 | `C:\Users\dessert\.m2\repository` 已预热 |
-| 依赖镜像 | 两个项目的 `.mvn/settings.xml` 都把 `*` 镜像到 `https://maven.aliyun.com/repository/public`，并由 `.mvn/maven.config` 自动加载（`--settings=.mvn/settings.xml`） |
-| IDE | IntelliJ IDEA 2025.3.2（`D:\pc\JetBrains`）；`.idea/misc.xml` 记录的 SDK：demo=`21`(languageLevel 17)、jsj2434=`graalvm-jdk-21`、Test34=`graalvm-21` |
+## 许可证
 
-## 4. 常用命令（PowerShell）
-
-```powershell
-# demo：跑测试（JDK 17）
-cd D:\project\githubclone\web\demo
-$env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-17.0.12'
-.\mvnw.cmd test                # 预期：Tests run: 9, Failures: 0
-
-# demo：启动（http://localhost:8080/ → 登录页）
-.\mvnw.cmd spring-boot:run
-
-# jsj2434：跑测试（JDK 21）
-cd D:\project\githubclone\web\jsj2434
-$env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
-.\mvnw.cmd -B clean test       # 2026-10-16 实测：Tests run: 16, Failures: 0
-
-# jsj2434：启动（http://localhost:8080/ ，登录 admin / 123）
-.\mvnw.cmd spring-boot:run
-```
-
-> 两个应用都占用 **8080**，不要同时启动；确需并行时用 `--server.port=8081` 覆盖。
-> 没有 `JAVA_HOME` 时 `mvnw` 会退回 PATH 上的 JDK 15，构建会以编译错误告终。
-
-## 5. 已知坑（速查）
-
-1. **JDK 版本**：demo 要 17、jsj2434/Test34 要 21；PATH 上的 15.0.1 不合格，必须显式设 `JAVA_HOME`。
-2. **没有全局 Maven**：一律用项目自带 `mvnw.cmd`；`Test34` 没有 Wrapper，先补。
-3. **`run-tests.bat` 是 bash 脚本**，Windows 下不可用（且它调用未安装的 `mvn`）。
-4. **`target/surefire-reports` 可能是过期报告**：demo 的历史报告只有 3 个测试类（缺 `UserServiceTests`）且方法数与当前源码不符，**以实跑结果为准**。
-5. **端口冲突**：两个应用默认都是 8080。
-6. **沙箱写入限制**：在受限文件沙箱的会话里，直接构建会往 `demo/target`、`jsj2434/target` 写文件而被拒绝（`AccessDeniedException`）；可先在仓库根建一份副本再构建（详见 [HANDOFF.md](HANDOFF.md) 第 6 节）。
-7. **`sy1` 的 `.vs/` 已入库**；`Test34` 的 `.idea/` 也已入库，属于可清理的历史包袱。
-8. **归档包与目录不同源**：`demo.zip` / `jsj2434.rar` 是更早的快照，改代码时不要以它们为准。
-
-## 6. 文档与协作
-
-- [AGENTS.md](AGENTS.md) — 在本仓库里工作必须遵守的规则与红线（改代码/跑测试/提交前先读）。
-- [HANDOFF.md](HANDOFF.md) — 交接主文档：当前状态、已完成事项、已知问题、验证证据、下一步任务。
-- 许可证：GPL-3.0（见 [LICENSE](LICENSE)）。
+仓库根目录的 [LICENSE](LICENSE) 为 GPL-3.0 全文，各子项目未单独声明许可。
