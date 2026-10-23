@@ -9,6 +9,11 @@ public interface UserService {
     /** 用户名和密码匹配数据库中的用户时返回 true，否则返回 false。 */
     Boolean login(Users user);
 
-    /** 查询 users 表中的全部用户。 */
+    /** 查询 tb_users 表中的全部用户。 */
     List<Users> selectAllUsers();
+
+    /** 按主键查询单个用户。 */
+    Users selectUserById(Integer id);
+    Users queryUserByName(String username);
+    Users queryUserByNameAndPassword(String username, String password);
 }

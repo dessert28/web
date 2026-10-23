@@ -5,7 +5,9 @@ import com.zjsru.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -42,16 +44,6 @@ public class UserController {
             return "login";
         }
     }
-    /** 查询 users 表全部用户，@ResponseBody 将 List 序列化为 JSON 数组。 */
-    @GetMapping("/selectAllUsers")
-    @ResponseBody
-    public List<Users> selectAllUsers() {
-        // 调用服务层查询所有用户信息
-        List<Users> userList = userService.selectAllUsers();
-        // 返回响应数据，由 Spring 自动序列化为 JSON
-        return userList;
-    }
-
     /** 请求参数绑定到 Users，ModelAndView 同时指定模板名和模型数据。 */
     @RequestMapping("/toMain")
     public ModelAndView toMain(Users user, ModelAndView modelAndView) {
@@ -70,11 +62,14 @@ public class UserController {
         return String.valueOf(10 / divisor);
     }
 
-    /** @ResponseBody 将字符串直接写入响应；这里没有销毁会话或执行认证注销。 */
+    /** @ResponseBody 返回演示用户对象，由 Spring 序列化为 JSON；这里没有销毁会话或执行认证注销。 */
     @RequestMapping("/logout")
     @ResponseBody
-    public String logout() {
-        return "退出成功";
+    public Users logout() {
+        Users user = new Users();
+        user.setUsername("张三");
+        user.setPassword("123");
+        return user;
     }
     /** 返回登录页，通过模型 message 显示退出提示；同样没有销毁会话。 */
     @RequestMapping("/logout2")
@@ -82,6 +77,36 @@ public class UserController {
         modelAndView.setViewName("login");
         modelAndView.addObject("message", "退出成功");
         return modelAndView;
+    }
+
+    /** 测试 Restful 风格：路径占位符 name、password 分别绑定到方法参数。 */
+    @RequestMapping(value = "/test/{name}/{password}", method = RequestMethod.GET)
+    public ModelAndView test(@PathVariable("name") String username, @PathVariable("password") String password,
+                             ModelAndView modelAndView) {
+        modelAndView.addObject("username", username);
+        modelAndView.addObject("password", password);
+        modelAndView.setViewName("main");
+        return modelAndView;
+    }
+
+    /** 查询 tb_users 表全部用户，@ResponseBody 将 List 序列化为 JSON 数组。 */
+    @GetMapping("/selectAllUsers")
+    @ResponseBody
+    public List<Users> selectAllUsers() {
+        // 调用服务层查询所有用户信息
+        List<Users> usersList = userService.selectAllUsers();
+        // 返回响应数据，由 Spring 自动序列化为 JSON
+        return usersList;
+    }
+
+    /** 按路径 id 查询单个用户，@ResponseBody 将对象序列化为 JSON。 */
+    @GetMapping("/selectUserById/{id}")
+    @ResponseBody
+    public Users selectUserById(@PathVariable int id) {
+        // 调用服务层按主键查询用户信息
+        Users users = userService.selectUserById(id);
+        // 返回响应数据，由 Spring 自动序列化为 JSON
+        return users;
     }
 
 }

@@ -15,7 +15,7 @@ public class UserServiceimpl implements UserService {
     @Autowired
     private UserMapper userMapper;
 
-    /** 按用户名查询 users 表，并比较数据库中的密码。 */
+    /** 按用户名查询 tb_users 表，并比较数据库中的密码。 */
     @Override
     public Boolean login(Users user) {
         // 按用户名查询用户；不存在时返回 null。
@@ -24,10 +24,25 @@ public class UserServiceimpl implements UserService {
         return stored != null && Objects.equals(stored.getPassword(), user.getPassword());
     }
 
-    /** 通过 MyBatis Mapper 查询 users 表中的全部记录。 */
+    /** 通过 MyBatis Mapper 查询 tb_users 表中的全部记录。 */
     @Override
     public List<Users> selectAllUsers() {
         List<Users> users = userMapper.selectAllUsers();
+        return users;
+    }
+    @Override
+    public Users selectUserById(Integer id) {
+        Users users = userMapper.selectUserById(id);
+        return users;
+    }
+    @Override
+    public Users queryUserByName(String username) {
+        Users users = userMapper.selectByUsername(username);
+        return users;
+    }
+    @Override
+    public Users queryUserByNameAndPassword(String username, String password) {
+        Users users = userMapper.selectUserByNameAndPassword(username, password);
         return users;
     }
 }

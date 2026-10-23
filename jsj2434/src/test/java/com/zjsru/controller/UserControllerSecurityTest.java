@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -66,9 +67,19 @@ class UserControllerSecurityTest {
     }
 
     @Test
+    // Restful 路径参数应写入模型并渲染 main 视图。
+    void restfulPathVariablesAreBoundToModel() throws Exception {
+        mockMvc.perform(get("/test/alice/secret"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("main"))
+                .andExpect(model().attribute("username", "alice"))
+                .andExpect(model().attribute("password", "secret"));
+    }
+
+    @Test
     // 旧 URL 应保持 404，不能被全局异常处理改成 HTTP 200。
     void oldEndpointsAreRemoved() throws Exception {
-        for (String path : new String[]{"/toLogin", "/main", "/test/alice/secret"}) {
+        for (String path : new String[]{"/toLogin", "/main"}) {
             mockMvc.perform(get(path)).andExpect(status().isNotFound());
         }
     }
@@ -79,7 +90,9 @@ class UserControllerSecurityTest {
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("username", "alice");
         mockMvc.perform(get("/logout").session(session))
-                .andExpect(status().isOk()).andExpect(content().string("退出成功"));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(content().string(containsString("张三")));
         mockMvc.perform(get("/logout2").session(session))
                 .andExpect(status().isOk()).andExpect(view().name("login"))
                 .andExpect(model().attribute("message", "退出成功"))
