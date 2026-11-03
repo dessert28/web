@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>医生条件查询</title>
+</head>
+<body>
+<!--查询表单：三个输入框的 name 与 Doctor 属性同名，GET 提交后由控制器按条件查询-->
+<form action="/doctorQuery" method="get">
+    <label for="doctorName">医生姓名：</label>
+    <input type="text" id="doctorName" name="doctorName" th:value="${condition.doctorName}"><br><br>
+    <label for="department">医生科室：</label>
+    <input type="text" id="department" name="department" th:value="${condition.department}"><br><br>
+    <label for="title">医生职称：</label>
+    <input type="text" id="title" name="title" th:value="${condition.title}"><br><br>
+    <input type="submit" value="查询">
+    <a href="/doctorList">查看全部</a>
+</form>
+
+<!--查询结果：与 doctorList.html 同一套表头，条件为空时等于全表-->
+<table border="1">
+    <tr>
+        <th>医生ID</th>
+        <th>医生姓名</th>
+        <th>医生性别</th>
+        <th>医生科室</th>
+        <th>医生职称</th>
+        <th>医生电话</th>
+    </tr>
+    <tr th:each="doctor : ${doctors}">
+        <td th:text="${doctor.id}"></td>
+        <td th:text="${doctor.doctorName}"></td>
+        <td th:text="${doctor.gender}"></td>
+        <td th:text="${doctor.department}"></td>
+        <td th:text="${doctor.title}"></td>
+        <td th:text="${doctor.phone}"></td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(doctors)}">
+        <td colspan="6">没有符合条件的医生</td>
+    </tr>
+</table>
+</body>
+</html>

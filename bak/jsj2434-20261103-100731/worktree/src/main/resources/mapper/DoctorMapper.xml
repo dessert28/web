@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- SQL 映射文件，三个要点：
+     1) namespace 必须是 Mapper 接口的全限定名；
+     2) 语句 id 必须与接口方法名一致，否则调用时抛 Invalid bound statement (not found)；
+     3) application.properties 需配置 mybatis.mapper-locations=classpath*:mapper/**/*.xml，
+        否则本文件不会被加载（mybatis-spring-boot-starter 默认不扫描 mapper 目录）。 -->
+<mapper namespace="com.zjsru.mapper.DoctorMapper">
+    <select id="queryAllDoctors" resultType="com.zjsru.domain.Doctor">
+        select * from doctor_info
+    </select>
+
+    <select id="queryDoctorById" resultType="com.zjsru.domain.Doctor">
+        select * from doctor_info where id = #{id}
+    </select>
+
+    <select id="queryDoctorsByName" resultType="com.zjsru.domain.Doctor">
+        select * from doctor_info where doctorName = #{doctorName}
+    </select>
+
+    <insert id="insertDoctor">
+        insert into doctor_info(doctorName, gender, department, title, phone)
+        values(#{doctorName}, #{gender}, #{department}, #{title}, #{phone})
+    </insert>
+
+    <update id="updateDoctor">
+        update doctor_info
+        set doctorName = #{doctorName},
+            gender     = #{gender},
+            department = #{department},
+            title      = #{title},
+            phone      = #{phone}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteDoctorById">
+        delete from doctor_info where id = #{id}
+    </delete>
+</mapper>

@@ -1,0 +1,28 @@
+/* Roboto — Material Design 标准字体，本地内嵌（f055b32c70…）
+   来源: Google Fonts v51 TTF，base64 内嵌以避免运行时依赖 fonts.googleapis.com
+   用法: <link rel="stylesheet" th:href="@{/vendor/md-roboto.css}">
+   回退: 本文件缺失时不影响布局，md-material.css 中 font-family 已声明中文回退链。 */
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(data:font/ttf;base64,__ROBOTO_400__) format('truetype');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(data:font/ttf;base64,__ROBOTO_500__) format('truetype');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(data:font/ttf;base64,__ROBOTO_700__) format('truetype');
+}

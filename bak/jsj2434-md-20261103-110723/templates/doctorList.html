@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<!--以表格形式展示医生列表-->
+<table border="1">
+    <tr>
+        <th>医生ID</th>
+        <th>医生姓名</th>
+        <th>医生性别</th>
+        <th>医生科室</th>
+        <th>医生职称</th>
+        <th>医生电话</th>
+    </tr>
+    <tr th:each="doctor : ${doctors}">
+        <td th:text="${doctor.id}"></td>
+        <td th:text="${doctor.doctorName}"></td>
+        <td th:text="${doctor.gender}"></td>
+        <td th:text="${doctor.department}"></td>
+        <td th:text="${doctor.title}"></td>
+        <td th:text="${doctor.phone}"></td>
+    </tr>
+</table>
+</body>
+</html>

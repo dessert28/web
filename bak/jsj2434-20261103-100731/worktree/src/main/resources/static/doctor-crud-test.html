@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>doctor_info 增删改查临时测试</title>
+    <style>
+        body { font-family: system-ui, "Microsoft YaHei", sans-serif; margin: 24px; color: #222; }
+        h1 { font-size: 20px; margin: 0 0 6px; }
+        h2 { font-size: 15px; margin: 0 0 10px; }
+        section { border: 1px solid #ddd; border-radius: 6px; padding: 12px 16px; margin: 0 0 16px; }
+        label { display: inline-block; margin: 0 10px 8px 0; font-size: 13px; }
+        input, select { width: 110px; padding: 4px 6px; }
+        button { padding: 4px 12px; cursor: pointer; }
+        table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
+        th, td { border: 1px solid #ddd; padding: 4px 8px; text-align: left; }
+        th { background: #f5f5f5; }
+        #output { background: #111; color: #7CFC00; padding: 10px; border-radius: 6px; min-height: 60px; white-space: pre-wrap; font-size: 12px; }
+        .hint { color: #666; font-size: 12px; margin: 6px 0; }
+    </style>
+</head>
+<body>
+<h1>doctor_info 增删改查临时测试页</h1>
+<p class="hint">仅用于本地联调。gender 在表中是 tinyint：0-女、1-男、2-其他，因此这里用下拉框保证取值合法。验证完可删除本文件。</p>
+
+<section>
+    <h2>新增医生（POST /insertDoctor）</h2>
+    <label>doctorName <input id="insert-doctorName" value="赵敏"></label>
+    <label>gender
+        <select id="insert-gender">
+            <option value="1" selected>1-男</option>
+            <option value="0">0-女</option>
+            <option value="2">2-其他</option>
+        </select>
+    </label>
+    <label>department <input id="insert-department" value="骨科"></label>
+    <label>title <input id="insert-title" value="主治医师"></label>
+    <label>phone <input id="insert-phone" value="13700001111"></label>
+    <button onclick="insertDoctor()">新增</button>
+    <p class="hint">doctorName、department、title 均不可为空；返回 1 表示插入成功。</p>
+</section>
+
+<section>
+    <h2>修改医生（PUT /updateDoctor）</h2>
+    <label>id <input id="update-id" value=""></label>
+    <label>doctorName <input id="update-doctorName" value=""></label>
+    <label>gender
+        <select id="update-gender">
+            <option value="1">1-男</option>
+            <option value="0">0-女</option>
+            <option value="2">2-其他</option>
+        </select>
+    </label>
+    <label>department <input id="update-department" value=""></label>
+    <label>title <input id="update-title" value=""></label>
+    <label>phone <input id="update-phone" value=""></label>
+    <button onclick="updateDoctor()">修改</button>
+    <p class="hint">全字段覆盖：未填写的字段会被更新为 NULL，可能触发非空约束报错。可点击列表中的“填入修改”自动带入该行数据。</p>
+</section>
+
+<section>
+    <h2>查询</h2>
+    <button onclick="loadDoctors()">刷新全部（GET /queryAllDoctors）</button>
+    <label style="margin-left:16px;">id <input id="query-id" value="1"></label>
+    <button onclick="queryById()">按 id 查询</button>
+    <label style="margin-left:16px;">doctorName <input id="query-name" value="张伟"></label>
+    <button onclick="queryByName()">按姓名查询</button>
+</section>
+
+<section>
+    <h2>医生列表</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>id</th><th>doctorName</th><th>gender</th><th>department</th><th>title</th><th>phone</th><th>操作</th>
+        </tr>
+        </thead>
+        <tbody id="doctor-rows"></tbody>
+    </table>
+</section>
+
+<pre id="output">等待操作...</pre>
+
+<script>
+    // 与应用同源部署，接口地址直接使用相对路径。
+    let currentDoctors = [];
+
+    function log(message) {
+        const output = document.getElementById('output');
+        output.textContent = new Date().toLocaleTimeString() + ' ' + message + '\n' + output.textContent;
+    }
+
+    function escapeHtml(text) {
+        return String(text === null || text === undefined ? '' : text)
+            .replace(/[&<>"']/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[ch]));
+    }
+
+    function value(id) {
+        return document.getElementById(id).value.trim();
+    }
+
+    // 数据库中 gender 为 tinyint，空白值不参与拼接，后端对应字段绑定为 null。
+    function genderText(gender) {
+        return ({'0': '女', '1': '男', '2': '其他'})[gender] || gender || '';
+    }
+
+    // 空字符串不参与拼接，后端对应字段绑定为 null。
+    function query(params) {
+        const search = new URLSearchParams();
+        for (const [key, val] of Object.entries(params)) {
+            if (val !== '') {
+                search.append(key, val);
+            }
+        }
+        return '?' + search.toString();
+    }
+
+    async function request(url, options) {
+        const response = await fetch(url, options);
+        const text = await response.text();
+        log(options.method + ' ' + url + ' -> HTTP ' + response.status + ' ' + text);
+        return text;
+    }
+
+    async function insertDoctor() {
+        if (!value('insert-doctorName')) {
+            log('新增失败：doctorName 不能为空');
+            return;
+        }
+        const params = {
+            doctorName: value('insert-doctorName'),
+            gender: value('insert-gender'),
+            department: value('insert-department'),
+            title: value('insert-title'),
+            phone: value('insert-phone')
+        };
+        await request('/insertDoctor' + query(params), {method: 'POST'});
+        await loadDoctors();
+    }
+
+    async function updateDoctor() {
+        const id = value('update-id');
+        if (!id) {
+            log('修改失败：id 不能为空');
+            return;
+        }
+        const params = {
+            id: id,
+            doctorName: value('update-doctorName'),
+            gender: value('update-gender'),
+            department: value('update-department'),
+            title: value('update-title'),
+            phone: value('update-phone')
+        };
+        await request('/updateDoctor' + query(params), {method: 'PUT'});
+        await loadDoctors();
+    }
+
+    async function deleteDoctor(id) {
+        if (!confirm('确认删除 id=' + id + ' 的医生吗？')) {
+            return;
+        }
+        await request('/deleteDoctorById/' + id, {method: 'DELETE'});
+        await loadDoctors();
+    }
+
+    async function queryById() {
+        await request('/queryDoctorById/' + value('query-id'), {method: 'GET'});
+    }
+
+    // 姓名是中文，路径参数需经过 encodeURIComponent 编码。
+    async function queryByName() {
+        await request('/queryDoctorsByName/' + encodeURIComponent(value('query-name')), {method: 'GET'});
+    }
+
+    async function loadDoctors() {
+        const response = await fetch('/queryAllDoctors');
+        if (!response.ok) {
+            log('GET /queryAllDoctors -> HTTP ' + response.status);
+            return;
+        }
+        currentDoctors = await response.json();
+        const rows = document.getElementById('doctor-rows');
+        rows.innerHTML = currentDoctors.map(doctor => {
+            const tds = [doctor.id, doctor.doctorName, genderText(doctor.gender), doctor.department, doctor.title, doctor.phone]
+                .map(v => '<td>' + escapeHtml(v) + '</td>').join('');
+            return '<tr>' + tds +
+                '<td><button onclick="fillUpdate(' + doctor.id + ')">填入修改</button> ' +
+                '<button onclick="deleteDoctor(' + doctor.id + ')">删除</button></td></tr>';
+        }).join('');
+        log('GET /queryAllDoctors -> ' + currentDoctors.length + ' 条记录');
+    }
+
+    function fillUpdate(id) {
+        const doctor = currentDoctors.find(d => d.id === id);
+        if (!doctor) {
+            log('未找到 id=' + id + ' 的医生，请先刷新列表');
+            return;
+        }
+        document.getElementById('update-id').value = doctor.id;
+        document.getElementById('update-doctorName').value = doctor.doctorName || '';
+        document.getElementById('update-gender').value = doctor.gender || '1';
+        document.getElementById('update-department').value = doctor.department || '';
+        document.getElementById('update-title').value = doctor.title || '';
+        document.getElementById('update-phone').value = doctor.phone || '';
+        log('已把 id=' + id + ' 的数据填入修改表单');
+    }
+
+    // 页面加载后立即展示当前表数据。
+    loadDoctors();
+</script>
+</body>
+</html>
