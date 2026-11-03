@@ -2,26 +2,69 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>主页</title>
+    <script th:src="@{/vendor/tailwindcss-3.4.16.js}"></script>
+    <script th:src="@{/vendor/md-material.config.js}"></script>
+    <link rel="stylesheet" th:href="@{/vendor/md-roboto.css}">
+    <link rel="stylesheet" th:href="@{/css/md-material.css}">
 </head>
-<body>
-<h1>欢迎来到我的网站,这里是主页</h1>
-<!--用户名：<span th:text="${username}"></span>
-密码：<span th:text="${password}"></span>-->
-<!--读取用户信息列表，使用th:each循环遍历，并以表格形式展示-->
-<table border="1">
-    <tr>
-        <th>用户名</th>
-        <th>密码</th>
-    </tr>
-    <tr th:each="user : ${usersList}">
-        <td th:text="${user.username}"></td>
-        <td th:text="${user.password}"></td>
-    </tr>
-</table>
-<a href="/logout">退出登录</a>
-<a href="/logout2">退出登录2</a>
+<body class="min-h-screen bg-surface-dim text-on-surface font-sans antialiased">
 
+<header class="md-appbar px-4 md:px-6 lg:px-8">
+    <div class="md-appbar__inner max-w-6xl mx-auto">
+        <span class="font-sans font-medium tracking-tight text-lg md:text-xl text-white">我的网站</span>
+        <nav class="flex gap-3 md:gap-4 text-sm">
+            <a href="/logout" class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">退出登录</a>
+            <a href="/logout2" class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">退出登录2</a>
+        </nav>
+    </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-12">
+
+    <h1 class="text-2xl md:text-3xl font-sans font-medium tracking-tight">欢迎来到我的网站,这里是主页</h1>
+    <p class="text-sm md:text-base text-[#757575] mt-2">下方表格展示数据库中登记的全部用户信息，数据由 selectAllUsers 查询后交给 usersList 渲染。</p>
+
+    <!--用户名：<span th:text="${username}"></span>
+    密码：<span th:text="${password}"></span>-->
+    <!--读取用户信息列表，使用th:each循环遍历，并以表格形式展示-->
+    <section class="mt-8 rounded-xl bg-white p-4 md:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] transition-all ease-[cubic-bezier(0.4,0,0.2,1)] duration-[250ms] hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(0,0,0,0.25),0_10px_10px_rgba(0,0,0,0.22)]">
+
+        <div class="flex items-center justify-between gap-3 md:gap-4 mb-4">
+            <h2 class="font-sans font-medium tracking-tight text-lg md:text-xl">用户列表</h2>
+            <span class="text-sm text-[#757575]">共 <span th:text="${usersList != null ? #lists.size(usersList) : 0}">0</span> 条</span>
+        </div>
+
+        <div class="md-table-wrap">
+            <table class="md-table">
+                <thead>
+                <tr>
+                    <th scope="col">用户名</th>
+                    <th scope="col">密码</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="user : ${usersList}">
+                    <td th:text="${user.username}"></td>
+                    <td th:text="${user.password}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(usersList)}">
+                    <td colspan="2" class="text-center text-sm md:text-base text-[#757575] py-8">暂无用户数据</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-6 flex flex-wrap gap-3 md:gap-4">
+            <a href="/logout"
+               class="rounded-full bg-primary text-white hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-10 px-6 inline-flex items-center justify-center md:ripple">退出登录</a>
+            <a href="/logout2"
+               class="rounded-full bg-transparent text-primary border border-primary hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-10 px-6 inline-flex items-center justify-center md:ripple">退出登录2</a>
+        </div>
+    </section>
+
+</main>
 
 </body>
 </html>

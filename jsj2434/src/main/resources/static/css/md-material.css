@@ -1,0 +1,429 @@
+/*!
+ * md-material.css — Material Design 组件层（jsj2434）
+ * ------------------------------------------------------------------
+ * 定位：只放 Tailwind utility 表达不了的规则。
+ *   加载顺序：tailwindcss-3.4.16.js → md-material.config.js → 本文件
+ *   Tailwind 先注入 preflight + utilities，本文件在其后，组件规则优先级足够。
+ *
+ * 设计契约（tokens 与 static/vendor/md-material.config.js 完全一致）：
+ *   色彩  primary #6200ee / primary-variant #3700b3 / secondary #03dac6 / secondary-variant #018786
+ *         surface #ffffff / background #fafafa / error #b00020
+ *   动效  统一缓动 cubic-bezier(0.4,0,0.2,1)，时长 250ms
+ *   海拔  双层阴影，dp1(dp2) → dp3 → dp4(对应 config 的 dp6/dp8)
+ *
+ * ■ 8dp 网格：间距只用 4 / 8 / 16 / 24 / 32 / 48 / 64 这些值。
+ *   不要出现 5、7、10、13、15、18、20、28 之类的自由间距。
+ *
+ * ■ 不要在这里重写 utility（.flex、.mt-4 之类交给 Tailwind）。
+ * ■ 禁用：硬边（0 模糊）阴影、无圆角工具类、衬线字体、超粗字重、装饰性渐变背景。
+ *   阴影一律双层带模糊；圆角用 8px / 12px；字重上限 500（标题）/ 700（强调）。
+ * ------------------------------------------------------------------ */
+
+@layer components {
+  /* ================================================================
+   * 1. 设计令牌（与 md-material.config.js / Tailwind theme 一一对应）
+   * ================================================================ */
+  :root {
+    --md-primary: #6200ee;
+    --md-primary-variant: #3700b3;
+    --md-secondary: #03dac6;
+    --md-secondary-variant: #018786;
+    --md-surface: #ffffff;
+    --md-background: #fafafa;
+    --md-surface-muted: #f5f5f5;
+    --md-on-surface: #212121;
+    --md-on-surface-medium: #757575;
+    --md-on-surface-weak: #9e9e9e;
+    --md-outline: #e0e0e0;
+    --md-error: #b00020;
+    --md-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --md-duration: 250ms;
+  }
+
+  /* ================================================================
+   * 9. 首帧防闪烁：在 Tailwind 注入前就把底色调好，避免白闪
+   * ================================================================ */
+  html,
+  body {
+    background: var(--md-background);
+    color: var(--md-on-surface);
+    font-family: Roboto, "Microsoft YaHei", "Noto Sans SC", "PingFang SC", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ================================================================
+   * 2. 海拔阴影：精确双层，不用单层模糊也不用硬边
+   *    注意 -2 与 -1 同值（config 中 dp1/dp2 即为同一层）；沿用 -3 抬升来表达 hover
+   * ================================================================ */
+  .md-elevation-1 {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  }
+
+  .md-elevation-2 {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  }
+
+  .md-elevation-3 {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.20), 0 6px 8px rgba(0, 0, 0, 0.22);
+  }
+
+  .md-elevation-4 {
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+  }
+
+  /* ================================================================
+   * 3. 涟漪：真实 Material 点击反馈
+   *    用法：<button class="md-ripple">…</button>
+   *    可选：在 pointerdown 时把 --md-ripple-x / --md-ripple-y 设成点击点百分比
+   * ================================================================ */
+  .md-ripple {
+    position: relative;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    isolation: isolate;
+  }
+
+  .md-ripple::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0);
+    background: radial-gradient(
+      circle at var(--md-ripple-x, 50%) var(--md-ripple-y, 50%),
+      rgba(255, 255, 255, 0.45) 0,
+      rgba(255, 255, 255, 0.45) 10%,
+      transparent 11%
+    );
+  }
+
+  .md-ripple:active::after {
+    animation: md-ripple 500ms var(--md-ease) forwards;
+  }
+
+  @keyframes md-ripple {
+    from {
+      transform: scale(0);
+      opacity: 0.45;
+    }
+    to {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+
+  /* ================================================================
+   * 4. 浮动标签输入框
+   *    <div class="md-field">
+   *      <input class="peer …" placeholder=" " />
+   *      <label>标签文字</label>
+   *    </div>
+   * ================================================================ */
+  .md-field {
+    position: relative;
+    display: block;
+    width: 100%;
+  }
+
+  .md-field > input,
+  .md-field > textarea,
+  .md-field > select {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 24px 12px 8px;
+    border: 1px solid var(--md-outline);
+    border-radius: 8px;
+    background: var(--md-surface);
+    color: var(--md-on-surface);
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.5;
+    /* 鼠标聚焦不出环，键盘聚焦交给下方 :focus-visible 统一处理 */
+    outline: 0 none;
+    transition: border-color var(--md-ease) var(--md-duration),
+      box-shadow var(--md-ease) var(--md-duration),
+      background-color var(--md-ease) var(--md-duration);
+  }
+
+  .md-field > input:hover,
+  .md-field > textarea:hover,
+  .md-field > select:hover {
+    border-color: var(--md-on-surface-weak);
+  }
+
+  .md-field > input:focus,
+  .md-field > textarea:focus,
+  .md-field > select:focus {
+    border-color: var(--md-primary);
+    box-shadow: inset 0 0 0 1px var(--md-primary);
+  }
+
+  /* label 绝对定位在输入框内，垂直居中 */
+  .md-field > label {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    transform-origin: left center;
+    color: var(--md-on-surface-medium);
+    font-size: 1rem;
+    line-height: 1;
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: calc(100% - 24px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: top var(--md-ease) var(--md-duration),
+      transform var(--md-ease) var(--md-duration),
+      color var(--md-ease) var(--md-duration);
+  }
+
+  /* 两态：聚焦 或 已有内容 → 上浮 + 缩小 + 变主色 */
+  .md-field > input:focus + label,
+  .md-field > input:focus-visible + label,
+  .md-field > input:not(:placeholder-shown) + label,
+  .md-field > textarea:focus + label,
+  .md-field > textarea:focus-visible + label,
+  .md-field > textarea:not(:placeholder-shown) + label,
+  .md-field > select:focus + label,
+  .md-field > select:focus-visible + label,
+  .md-field > select:not(:placeholder-shown) + label,
+  .md-field.md-field--filled > label {
+    top: 8px;
+    transform: translateY(0) scale(0.75);
+    color: var(--md-primary);
+  }
+
+  .md-field > textarea + label,
+  .md-field > select + label {
+    top: 50%;
+  }
+
+  .md-field > textarea:focus + label,
+  .md-field > textarea:not(:placeholder-shown) + label,
+  .md-field > select:focus + label,
+  .md-field > select:not(:placeholder-shown) + label {
+    top: 8px;
+  }
+
+  /* 错误态：边框与 label 都用 --md-error */
+  .md-field--error > input,
+  .md-field--error > textarea,
+  .md-field--error > select {
+    border-color: var(--md-error);
+  }
+
+  .md-field--error > input:focus,
+  .md-field--error > textarea:focus,
+  .md-field--error > select:focus {
+    border-color: var(--md-error);
+    box-shadow: inset 0 0 0 1px var(--md-error);
+  }
+
+  .md-field--error > label,
+  .md-field--error > input:focus + label,
+  .md-field--error > input:not(:placeholder-shown) + label,
+  .md-field--error > textarea:focus + label,
+  .md-field--error > textarea:not(:placeholder-shown) + label {
+    color: var(--md-error);
+  }
+
+  /* 辅助文字 / 错误提示 */
+  .md-field__helper {
+    display: block;
+    margin-top: 4px;
+    padding-inline: 12px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--md-on-surface-medium);
+    transition: color var(--md-ease) var(--md-duration);
+  }
+
+  .md-field--error .md-field__helper {
+    color: var(--md-error);
+  }
+
+  /* ================================================================
+   * 5. 表格
+   * ================================================================ */
+  .md-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+  }
+
+  .md-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+    color: var(--md-on-surface);
+  }
+
+  .md-table thead th {
+    background: var(--md-surface-muted);
+    color: var(--md-on-surface-medium);
+    font-weight: 500;
+    font-size: 0.875rem;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .md-table th,
+  .md-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--md-outline);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .md-table tbody tr {
+    transition: background-color var(--md-duration) var(--md-ease);
+  }
+
+  .md-table tbody tr:hover {
+    background: rgba(98, 0, 238, 0.05);
+  }
+
+  .md-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  /* 让表头首尾贴住卡片圆角 */
+  .md-table thead th:first-child {
+    border-radius: 12px 0 0 0;
+  }
+
+  .md-table thead th:last-child {
+    border-radius: 0 12px 0 0;
+  }
+
+  .md-table tbody tr:last-child td:first-child {
+    border-radius: 0 0 0 12px;
+  }
+
+  .md-table tbody tr:last-child td:last-child {
+    border-radius: 0 0 12px 0;
+  }
+
+  /* 数字列右对齐时保留可读的等宽感 */
+  .md-table .md-table__num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ================================================================
+   * 6. 顶部应用栏
+   * ================================================================ */
+  .md-appbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--md-primary);
+    color: #ffffff;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.20), 0 6px 8px rgba(0, 0, 0, 0.22);
+  }
+
+  .md-appbar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    gap: 12px;
+    padding-inline: 16px;
+  }
+
+  .md-appbar__title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    color: inherit;
+  }
+
+  .md-appbar a,
+  .md-appbar button {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* ================================================================
+   * 7. 焦点与可达性：可见焦点环，不裸取消 outline
+   * ================================================================ */
+  :focus-visible {
+    outline: 2px solid var(--md-primary);
+    outline-offset: 2px;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--md-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* 深色背景（应用栏 / 主色按钮）上的焦点环用白色，保证对比度 */
+  .md-appbar a:focus-visible,
+  .md-appbar button:focus-visible,
+  .md-on-primary:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+  }
+
+  .md-field > input:focus-visible,
+  .md-field > textarea:focus-visible,
+  .md-field > select:focus-visible {
+    outline-offset: 1px;
+  }
+
+  /* 跳转链接 */
+  .md-skip-link {
+    position: absolute;
+    left: 16px;
+    top: -64px;
+    z-index: 60;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: var(--md-surface);
+    color: var(--md-primary);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.20), 0 6px 8px rgba(0, 0, 0, 0.22);
+    transition: top var(--md-ease) var(--md-duration);
+  }
+
+  .md-skip-link:focus-visible {
+    top: 8px;
+  }
+}
+
+/* ================================================================
+ * 8. 降低动效偏好：关掉位移与缩放，但保留颜色变化
+ *    （全文件仅此两处，别无他用）
+ * ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+
+  /* 位移/缩放类动效直接定格到终态，颜色过渡仍生效 */
+  .md-ripple:active::after {
+    transform: scale(1);
+    opacity: 0;
+  }
+
+  .md-field > label {
+    transition-property: color;
+  }
+}

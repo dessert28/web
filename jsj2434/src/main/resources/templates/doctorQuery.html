@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>医生条件查询</title>
+    <script th:src="@{/vendor/tailwindcss-3.4.16.js}"></script>
+    <script th:src="@{/vendor/md-material.config.js}"></script>
+    <link rel="stylesheet" th:href="@{/vendor/md-roboto.css}">
+    <link rel="stylesheet" th:href="@{/css/md-material.css}">
+</head>
+<body class="min-h-screen bg-surface-dim text-on-surface font-sans antialiased">
+
+<header class="md-appbar px-4 md:px-6 lg:px-8">
+    <div class="md-appbar__inner max-w-6xl mx-auto">
+        <span class="font-sans font-medium tracking-tight text-lg md:text-xl text-white">医生条件查询</span>
+        <nav class="flex gap-3 md:gap-4 text-sm">
+            <a href="/doctorList" class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">医生列表</a>
+            <a href="/doctorQuery" class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">条件查询</a>
+        </nav>
+    </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-12">
+
+    <h1 class="text-2xl md:text-3xl font-sans font-medium tracking-tight">医生条件查询</h1>
+    <p class="text-sm md:text-base text-[#757575] mt-2">按姓名、科室、职称组合筛选医生，条件留空即表示不限该项。</p>
+
+    <!--查询表单：三个输入框的 name 与 Doctor 属性同名，GET 提交后由控制器按条件查询-->
+    <section class="mt-8 rounded-xl bg-white p-4 md:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] transition-all ease-[cubic-bezier(0.4,0,0.2,1)] duration-[250ms] hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(0,0,0,0.25),0_10px_10px_rgba(0,0,0,0.22)]">
+
+        <form action="/doctorQuery" method="get">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                <div class="md-field relative">
+                    <input id="doctorName" name="doctorName" type="text" placeholder=" " th:value="${condition.doctorName}"
+                           class="peer w-full rounded-md border border-gray-400 bg-transparent px-3 pt-6 pb-2 text-base focus:border-[#6200ee] focus:outline-none transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+                    <label for="doctorName" class="pointer-events-none">医生姓名</label>
+                </div>
+                <div class="md-field relative">
+                    <input id="department" name="department" type="text" placeholder=" " th:value="${condition.department}"
+                           class="peer w-full rounded-md border border-gray-400 bg-transparent px-3 pt-6 pb-2 text-base focus:border-[#6200ee] focus:outline-none transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+                    <label for="department" class="pointer-events-none">医生科室</label>
+                </div>
+                <div class="md-field relative">
+                    <input id="title" name="title" type="text" placeholder=" " th:value="${condition.title}"
+                           class="peer w-full rounded-md border border-gray-400 bg-transparent px-3 pt-6 pb-2 text-base focus:border-[#6200ee] focus:outline-none transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+                    <label for="title" class="pointer-events-none">医生职称</label>
+                </div>
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-3 md:gap-4">
+                <button type="submit"
+                        class="rounded-full bg-primary text-white hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-10 px-6 inline-flex items-center justify-center md:ripple">查询</button>
+                <a href="/doctorList"
+                   class="rounded-full bg-transparent text-primary border border-primary hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-10 px-6 inline-flex items-center justify-center md:ripple">查看全部</a>
+            </div>
+
+        </form>
+    </section>
+
+    <!--查询结果：与 doctorList.html 同一套表头，条件为空时等于全表-->
+    <section class="mt-6 rounded-xl bg-white p-4 md:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] transition-all ease-[cubic-bezier(0.4,0,0.2,1)] duration-[250ms] hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(0,0,0,0.25),0_10px_10px_rgba(0,0,0,0.22)]">
+
+        <div class="flex items-center justify-between gap-3 md:gap-4 mb-4">
+            <h2 class="font-sans font-medium tracking-tight text-lg md:text-xl">查询结果</h2>
+            <span class="text-sm text-[#757575]">共 <span th:text="${doctors != null ? #lists.size(doctors) : 0}">0</span> 条</span>
+        </div>
+
+        <div class="md-table-wrap">
+            <table class="md-table">
+                <thead>
+                <tr>
+                    <th scope="col">医生ID</th>
+                    <th scope="col">医生姓名</th>
+                    <th scope="col">医生性别</th>
+                    <th scope="col">医生科室</th>
+                    <th scope="col">医生职称</th>
+                    <th scope="col">医生电话</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="doctor : ${doctors}">
+                    <td th:text="${doctor.id}"></td>
+                    <td th:text="${doctor.doctorName}"></td>
+                    <td th:text="${doctor.gender}"></td>
+                    <td th:text="${doctor.department}"></td>
+                    <td th:text="${doctor.title}"></td>
+                    <td th:text="${doctor.phone}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(doctors)}">
+                    <td colspan="6" class="text-center text-sm md:text-base text-[#757575] py-8">没有符合条件的医生</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</main>
+
+</body>
+</html>
