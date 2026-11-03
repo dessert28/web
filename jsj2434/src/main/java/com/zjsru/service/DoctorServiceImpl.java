@@ -35,4 +35,14 @@ public class DoctorServiceImpl implements DoctorService {
     public List<Doctor> queryDoctorsBySingleCondition(Doctor doctor) {
         return doctorMapper.queryDoctorsBySingleCondition(doctor);
     }
+
+    @Override
+    public int updateDoctor(Doctor doctor) {
+        return doctorMapper.updateDoctor(doctor);
+    }
+
+    @Override
+    public List<Doctor> queryDoctorsByIds(List<Integer> ids) {
+        return doctorMapper.queryDoctorsByIds(ids);
+    }
 }

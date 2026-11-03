@@ -5,6 +5,7 @@ import com.zjsru.service.DoctorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -70,6 +71,39 @@ public class DoctorController {
     public List<Doctor> queryDoctorsBySingleCondition(Doctor doctor) {
         //1.调用业务逻辑方法
         List<Doctor> doctors = doctorService.queryDoctorsBySingleCondition(doctor);
+        //2.返回结果给前端
+        return doctors;
+    }
+    //动态更新医生信息：只提交需要改的字段，未提交的字段不会被清空
+    @RequestMapping("/updateDoctor")
+    @ResponseBody
+    public int updateDoctor(Doctor doctor) {
+        //没传 id 或一个可更新字段都没传时直接返回 0：
+        //否则 <set> 里什么都不会生成，拼出来的 SQL 是 update doctor_info where id=?，语法错误
+        if (doctor.getId() == null || !hasAnyUpdateField(doctor)) {
+            return 0;
+        }
+        //1.调用业务逻辑方法
+        int rows = doctorService.updateDoctor(doctor);
+        //2.返回受影响行数
+        return rows;
+    }
+    //判断是否至少提交了一个可更新字段
+    private boolean hasAnyUpdateField(Doctor doctor) {
+        return notBlank(doctor.getDoctorName()) || notBlank(doctor.getGender())
+                || notBlank(doctor.getDepartment()) || notBlank(doctor.getTitle())
+                || notBlank(doctor.getPhone());
+    }
+
+    private boolean notBlank(String value) {
+        return value != null && value.trim().length() > 0;
+    }
+    //根据多个医生ID批量查询：/queryDoctorsByIds?ids=1,2,3
+    @RequestMapping("/queryDoctorsByIds")
+    @ResponseBody
+    public List<Doctor> queryDoctorsByIds(@RequestParam("ids") List<Integer> ids) {
+        //1.调用业务逻辑方法
+        List<Doctor> doctors = doctorService.queryDoctorsByIds(ids);
         //2.返回结果给前端
         return doctors;
     }
