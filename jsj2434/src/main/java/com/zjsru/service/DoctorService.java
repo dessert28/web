@@ -4,23 +4,12 @@ import com.zjsru.domain.Doctor;
 
 import java.util.List;
 
-/** 医生业务契约，使控制器通过接口调用医生数据访问实现。 */
 public interface DoctorService {
-    /** 查询 doctor_info 表中的全部医生。 */
-    List<Doctor> queryAllDoctors();
-
-    /** 按主键查询单个医生。 */
-    Doctor queryDoctorById(Integer id);
-
-    /** 按姓名查询医生，同名的可能有多条。 */
-    List<Doctor> queryDoctorsByName(String doctorName);
-
-    /** 新增医生，返回受影响行数。 */
-    int insertDoctor(Doctor doctor);
-
-    /** 按主键更新医生，返回受影响行数。 */
-    int updateDoctor(Doctor doctor);
-
-    /** 按主键删除医生，返回受影响行数。 */
-    int deleteDoctorById(Integer id);
+    public List<Doctor> queryAllDoctors();
+    public Doctor queryDoctorById(int id);
+    public int addDoctor(Doctor doctor);
+    // 根据条件查询医生信息
+    public List<Doctor> queryDoctorsByCondition(Doctor doctor);
+    // 根据单个条件查询医生信息
+    public List<Doctor> queryDoctorsBySingleCondition(Doctor doctor);
 }

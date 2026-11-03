@@ -6,14 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-
-/** @Service 将实现类注册到 Spring 容器，供控制器注入。 */
 @Service
 public class DoctorServiceImpl implements DoctorService {
-    // 注入 MyBatis Mapper，由 MyBatis 生成代理实现。
     @Autowired
-    private DoctorMapper doctorMapper;
-
+    DoctorMapper doctorMapper;
     @Override
     public List<Doctor> queryAllDoctors() {
         List<Doctor> doctors = doctorMapper.queryAllDoctors();
@@ -21,27 +17,22 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
-    public Doctor queryDoctorById(Integer id) {
+    public Doctor queryDoctorById(int id) {
         return doctorMapper.queryDoctorById(id);
     }
 
     @Override
-    public List<Doctor> queryDoctorsByName(String doctorName) {
-        return doctorMapper.queryDoctorsByName(doctorName);
+    public int addDoctor(Doctor doctor) {
+        return doctorMapper.addDoctor(doctor);
     }
 
     @Override
-    public int insertDoctor(Doctor doctor) {
-        return doctorMapper.insertDoctor(doctor);
+    public List<Doctor> queryDoctorsByCondition(Doctor doctor) {
+        return doctorMapper.queryDoctorsByCondition(doctor);
     }
 
     @Override
-    public int updateDoctor(Doctor doctor) {
-        return doctorMapper.updateDoctor(doctor);
-    }
-
-    @Override
-    public int deleteDoctorById(Integer id) {
-        return doctorMapper.deleteDoctorById(id);
+    public List<Doctor> queryDoctorsBySingleCondition(Doctor doctor) {
+        return doctorMapper.queryDoctorsBySingleCondition(doctor);
     }
 }

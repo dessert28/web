@@ -1,6 +1,51 @@
-# HANDOFF.md — 当前交接状态（2026-10-22）
+# HANDOFF.md — 当前交接状态（2026-11-03）
 
-> 本节是最新状态，优先于下面所有历史章节。2026-10-20 的整理改动目前**只在工作区与索引里，还没有任何提交**。
+> 本节是最新状态，优先于下面所有历史章节。2026-11-03 的覆盖改动目前**只在工作区里，还没有任何提交**。
+
+## 一句话现状
+
+HEAD 是 `7560a92`（`jsj2434_20261023_01`，已与 `origin/main` 同步）。2026-11-03 上午，按用户指示用 `jsj2434.rar`（原始教学版压缩包）**重新覆盖了 `jsj2434/` 目录**，把上个版本（18 测试、全局异常、mybatis.sql 全量建表）回退成课程原始实现，并新增了两个 doctor 页面模板。所有改动都未提交、未推送；其他子项目（`demo`、`shiyan2`、`Test34`、`sy1`）本轮无改动。
+
+## 1. 2026-11-03 覆盖事件（最新）
+
+- **动作**：10:07 按 `jsj2434.rar` 覆盖 `jsj2434/`，覆盖前完整快照在 [`bak/jsj2434-20261103-100731/`](bak/jsj2434-20261103-100731/MANIFEST.md)（44 个文件：覆盖前整树 `worktree/`、`git archive HEAD` 的 `head.tar`、未跟踪的 `mybatis_dump.sql` 与 `doctor-crud-test.html`、`MANIFEST.md`）。
+- **rar 内容核实**（`bsdtar -tf jsj2434.rar` 实跑）：是 27 个源码文件 + `target/` 编译产物的课程版本，**没有** README、没有 `static/`、没有建表脚本、没有测试之外的东西；当前工作区里的 `DoctorController`/`DoctorMapper.xml`/`UserServiceImpl`（正确大小写）等与 rar 一致。
+
+### 覆盖后的 jsj2434（当前工作区状态）
+
+- **User 模块**：`/` `/toLogin` `/login` `/toMain` `/logout` `/logout2` `/test/{name}/{password}` `/selectAllUsers` `/queryUserById/{id}` `/queryUserByNameAndPassword/{u}/{p}`。登录成功 **`forward:/selectAllUsers`**（改版前的行为是 `forward:/toMain`），`main.html` 以表格循环展示 `usersList`。
+- **Doctor 模块**：`/queryAllDoctors` `/doctorList` `/queryDoctorById` `/addDoctor` `/doctorQuery`（+`/queryDoctorsByCondition`）。`DoctorMapper.xml` 用 `<where>` 动态条件 + `like` 模糊查询 `doctor_info`。
+- **新增模板**：`src/main/resources/templates/doctorList.html`、`doctorQuery.html`（条件回显 + 空结果提示）——这两个是 rar 里**没有**的，覆盖后手工加的。
+- **删掉的旧文件**：`GlobalExceptionHandler`、`Result`、`schema.sql`、`src/main/resources/mybatis.sql`、`static/crud-test.html`、四个测试类（`GlobalExceptionHandlerTest`/`UserControllerSecurityTest`/`UserPageTest`/`UserServiceTest`）、`jsj2434/README.md`。`UserServiceimpl.java` → `UserServiceImpl.java`（重命名，索引中已识别为 R100）。
+- **测试**：只剩 `Jsj2434ApplicationTests.contextLoads`（`@SpringBootTest`，1 个用例）。
+- **异常处理**：`GlobalExceptionHandler`/`Result` 已删，异常走 Spring Boot 默认处理，不再统一返回 `Result{code,msg,data}` JSON。
+- **建表**：`application.properties` 已去掉 `spring.sql.init.*`；工作区 jsj2434 内**没有**建表脚本，依赖 MySQL 库 `mybatis` 现成的 `tb_users`、`doctor_info` 等表。全量建表脚本在仓库根 `mybatis.sql`（Navicat 导出）。
+
+### 实跑验证（2026-11-03）
+
+- `cd jsj2434; $env:JAVA_HOME='D:\pc\.jdks\graalvm-jdk-21.0.7'; .\mvnw.cmd -B clean compile` → **BUILD SUCCESS（退出码 0）**。只验证了编译，未跑 test（当前上下文加载测试会真实连 MySQL）。
+
+### 本轮未提交的 git 改动一览
+
+| 类别 | 内容 |
+| --- | --- |
+| 覆盖改写 | `pom.xml`（去掉编码属性、devtools、编译器插件）、`application.properties`、两个 controller、mappers、services、三个模板、`Jsj2434Application`、`Jsj2434ApplicationTests` |
+| 索引删除（D） | 上述"删掉的旧文件"清单 |
+| 索引重命名（R100） | `UserServiceimpl.java` → `UserServiceImpl.java` |
+| 工作区新增（??） | `templates/doctorList.html`、`templates/doctorQuery.html`、`bak/jsj2434-20261103-100731/` |
+| 压缩包 | `jsj2434.rar` 改动（17 KB → 30 KB，未提交） |
+
+## 后续建议
+
+1. 对本轮 Doctor/User 改版做一次代码 Review（用户已选该方向，尚未执行——见会话记录）。
+2. 决定 `jsj2434.rar`、`bak/` 是否入库，以及根 `mybatis.sql` 与 jsj2434 的关系是否要在文档里固定下来。
+3. 确认无误后按 AGENTS.md 规范分笔提交并推送（推送前与用户确认）。
+
+---
+
+# HANDOFF.md — 旧交接状态（2026-10-22，已被 2026-11-03 覆盖事件取代）
+
+> 本节描述的是**覆盖前**的旧版 jsj2434（18 测试、全局异常、自动建表），2026-11-03 上午已被 `jsj2434.rar` 覆盖回退，勿再按此操作。历史保留供追溯。
 
 ## 一句话现状
 

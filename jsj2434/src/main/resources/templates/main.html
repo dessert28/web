@@ -5,11 +5,23 @@
     <title>Title</title>
 </head>
 <body>
-<h1>欢迎来到我的网站，这里是主页</h1>
-<!-- 此处读取会话属性；登录未设置 session，控制器的模型 username 不会自动写入会话。 -->
-欢迎你：<span th:text="${session.username}"></span>
-<!-- 两种退出演示：第一个返回文本，第二个返回带提示的登录页；均不销毁会话。 -->
+<h1>欢迎来到我的网站,这里是主页</h1>
+<!--用户名：<span th:text="${username}"></span>
+密码：<span th:text="${password}"></span>-->
+<!--读取用户信息列表，使用th:each循环遍历，并以表格形式展示-->
+<table border="1">
+    <tr>
+        <th>用户名</th>
+        <th>密码</th>
+    </tr>
+    <tr th:each="user : ${usersList}">
+        <td th:text="${user.username}"></td>
+        <td th:text="${user.password}"></td>
+    </tr>
+</table>
 <a href="/logout">退出登录</a>
 <a href="/logout2">退出登录2</a>
+
+
 </body>
 </html>

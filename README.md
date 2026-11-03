@@ -9,7 +9,7 @@
 | 目录 | 内容 | 技术栈 | 构建 / 测试（2026-10-23 实测） |
 | --- | --- | --- | --- |
 | [`demo/`](demo/) | 课堂参考实现：登录模块（index / login / main） | Spring Boot 4.1.1 · Java 21 · Thymeleaf | ✅ 1/1 通过（JDK 21） |
-| [`jsj2434/`](jsj2434/) | 课程实验复刻 + MyBatis/MySQL 认证 + CRUD 接口 + 全局异常处理 | Spring Boot 4.0.8 · Java 21 · Thymeleaf · MyBatis · MySQL 8 | ✅ 18/18 通过（JDK 21） |
+| [`jsj2434/`](jsj2434/) | 课程实验复刻 + User 登录/列表 + Doctor 增删改查与条件查询 | Spring Boot 4.0.8 · Java 21 · Thymeleaf · MyBatis · MySQL 8 | ✅ 编译通过（2026-11-03 实测） |
 | [`shiyan2/`](shiyan2/) | 实验二：Thymeleaf 商品信息管理（添加 + 列表） | Spring Boot 4.1.1 · Java 17 · Thymeleaf | ✅ 1/1 通过（JDK 17） |
 | [`Test34/`](Test34/) | Maven 练习空壳：Hello World + MySQL 驱动 | Java 21 · mysql-connector-j 8.4.0 | ⚙️ 可编译，无测试 |
 | [`sy1/`](sy1/) | VS2022 ASP.NET Web 应用空模板 | .NET Framework 4.7.2 · IIS Express | ⛔ 未开发 |
@@ -22,15 +22,14 @@ web/
 │   ├── src/main/java/com/example/demo/{controller,domain,service}
 │   ├── src/main/resources/{application.properties,templates/{index,login,main}.html}
 │   └── src/test/java/com/example/demo/DemoApplicationTests.java
-├── jsj2434/                  课程实验复刻 + 数据库认证（com.zjsru）
+├── jsj2434/                  课程实验复刻 + User / Doctor 模块（com.zjsru）
 │   ├── src/main/java/com/zjsru/
-│   │   ├── controller/UserController.java          页面 / 登录 / Restful / CRUD 路由
-│   │   ├── exception/GlobalExceptionHandler.java   统一 Result JSON 异常响应
-│   │   ├── mapper/UserMapper.java                  MyBatis 查询与增删改 tb_users 表
-│   │   ├── service/{UserService,UserServiceimpl}.java
-│   │   └── domain/{Users,Result}.java
-│   ├── src/main/resources/{application.properties,mybatis.sql,templates/{index,login,main}.html,static/crud-test.html}
-│   └── src/test/java/com/zjsru/                    5 个测试类 / 18 个用例
+│   │   ├── controller/{UserController,DoctorController}.java  页面 / 登录 / 查询 / 医生 CRUD 路由
+│   │   ├── mapper/{UserMapper,DoctorMapper}.java              MyBatis 查询 tb_users / doctor_info
+│   │   ├── service/{UserService,UserServiceImpl,DoctorService,DoctorServiceImpl}.java
+│   │   └── domain/{Users,Doctor}.java
+│   ├── src/main/resources/{application.properties,mapper/DoctorMapper.xml,templates/{index,login,main,doctorList,doctorQuery}.html}
+│   └── src/test/java/com/zjsru/Jsj2434ApplicationTests.java   仅上下文加载用例
 ├── shiyan2/                  实验二：商品信息管理（com.example.shiyan2）
 │   ├── src/main/java/com/example/shiyan2/{controller,model,service}
 │   ├── src/main/resources/{templates/{addGoods,goodsList}.html,static/css/goods.css}
@@ -41,7 +40,8 @@ web/
 ├── HANDOFF.md                交接状态与历史记录
 ├── README.md                 本文件
 ├── demo.zip                  demo 的早期快照（与当前 demo/ 不同源，勿当源码用）
-├── jsj2434.rar               早期 jsj2434 快照（未解压核对）
+├── jsj2434.rar               jsj2434 课程原始压缩包（2026-11-03 按它覆盖过 jsj2434/）
+├── mybatis.sql               MySQL 库 mybatis 的全量建表 + 演示数据脚本（Navicat 导出，供 jsj2434 建表）
 └── LICENSE                   GPL-3.0
 ```
 
@@ -96,34 +96,35 @@ cd <项目目录>
 
 原样保留了源项目的行为：登录不写 session，所以主页用户名是空的；两个退出接口都不销毁会话。
 
-### jsj2434/ — 课程实验复刻
+### jsj2434/ — 课程实验复刻（User + Doctor）
 
-在 `demo/` 的基础上扩展：
+在 `demo/` 的基础上扩展为两个模块，2026-11-03 按 `jsj2434.rar` 覆盖回退到课程原始实现（细节见 HANDOFF）：
 
-- **登录改为查库**：`UserMapper.selectByUsername` 查询 `tb_users` 表，`UserServiceimpl` 比对数据库中的密码，不再使用硬编码账号。
-- **自动建表**：`src/main/resources/mybatis.sql` 由 `spring.sql.init.mode=always` 在启动时执行，建表并导入演示数据（`tb_users` 中 `admin/123` 等），脚本自带 `DROP TABLE IF EXISTS`，每次启动重建。
-- **CRUD 接口**：新增用户的增删改查（`/selectAllUsers`、`/queryUserById/{id}`、`/insertUser`、`/updateUser`、`/deleteUserById/{id}`），并附带本地联调页 `static/crud-test.html`。
-- **统一异常响应**：`GlobalExceptionHandler` 捕获控制器里的空指针、算术和其他异常，统一返回 `Result{code=500, msg, data=null}` 的 JSON，HTTP 状态仍是 200。
+- **User 模块**：登录后内部转发 `/selectAllUsers`，主页 `main.html` 以表格循环展示 `tb_users`；`/queryUserById/{id}`、`/queryUserByNameAndPassword/{u}/{p}` 查询接口。
+- **Doctor 模块**：`doctor_info` 表的查询 / 新增 / 列表页 / 条件查询页；`DoctorMapper.xml` 用 `<where>` 动态条件 + `like` 模糊匹配（姓名 / 科室 / 职称），新增 `doctorList.html`、`doctorQuery.html` 两个页面。
+- **数据库**：MySQL 库 `mybatis`（`localhost:3306`，`root/root`），依赖现成 `tb_users`、`doctor_info` 表；全量建表脚本在仓库根 [`mybatis.sql`](mybatis.sql)（Navicat 导出，含数十张表），当前 jsj2434 内没有自动建表配置。
+- **无全局异常处理**：`GlobalExceptionHandler`/`Result` 已删除，异常走 Spring Boot 默认处理。
 
 | 方法 | 路径 | 行为 |
 | --- | --- | --- |
 | GET | `/` | 欢迎页 |
-| GET | `/tologin` | 登录表单 |
-| POST | `/login` | 查 `tb_users` 表校验，成功内部转发 `/toMain`，失败回 `login` |
+| GET | `/toLogin` | 登录表单 |
+| POST | `/login` | 校验 `admin/123` 成功后 `forward:/selectAllUsers`，失败回 `login` |
 | GET/POST | `/toMain` | 主页，模型带 `username` |
 | GET | `/logout` | 返回硬编码 `Users`（张三 / 123）的 JSON |
 | GET | `/logout2` | 登录页 + `message=退出成功` |
-| GET | `/testException` | 故意整数除零，演示全局异常处理的 JSON 响应 |
 | GET | `/test/{name}/{password}` | Restful 路径参数绑定演示，渲染 `main` |
-| GET | `/selectAllUsers` | 查询 `tb_users` 全部用户，返回 JSON 数组 |
+| GET | `/selectAllUsers` | 查询 `tb_users` 全部用户，渲染 `main` 表格 |
 | GET | `/queryUserById/{id}` | 按主键查询用户，返回 JSON |
 | GET | `/queryUserByNameAndPassword/{username}/{password}` | 按用户名 + 明文密码查询，返回 JSON |
-| POST | `/insertUser` | 新增用户，返回受影响行数 |
-| PUT | `/updateUser` | 按 id 全字段更新用户，返回受影响行数 |
-| DELETE | `/deleteUserById/{id}` | 按 id 删除用户，返回受影响行数 |
-| GET | `/crud-test.html` | 临时可视化 CRUD 联调页 |
+| GET | `/queryAllDoctors` | 查询 `doctor_info` 全部医生，返回 JSON |
+| GET | `/doctorList` | 渲染 `doctorList.html` 医生表格 |
+| GET | `/queryDoctorById?id=` | 按 id 查询医生，返回 JSON |
+| POST | `/addDoctor` | 新增医生，返回受影响行数 |
+| GET | `/doctorQuery` | 条件查询，渲染 `doctorQuery.html`（条件回显） |
+| GET | `/queryDoctorsByCondition` | 条件查询（JSON），按姓名 / 科室 / 职称 like 模糊 |
 
-测试 18 个：页面 2、控制器流程 7、服务 3、上下文 1、异常处理 5。
+当前只有一个上下文加载测试（`Jsj2434ApplicationTests`）。
 
 ### shiyan2/ — 实验二：商品信息管理
 
@@ -151,18 +152,19 @@ VS2022 新建的 ASP.NET Web Application（.NET Framework 4.7.2），只有 `Ass
 | 项目 | 命令 | JDK | 结果 |
 | --- | --- | --- | --- |
 | `demo` | `.\mvnw.cmd -B clean test` | 21 | BUILD SUCCESS，Tests run: 1 |
-| `jsj2434` | `.\mvnw.cmd -B clean test` | 21 | BUILD SUCCESS，Tests run: 18 |
+| `jsj2434` | `.\mvnw.cmd -B clean compile` | 21 | BUILD SUCCESS（仅编译；测试 1 个上下文用例，需 MySQL） |
 | `shiyan2` | `.\mvnw.cmd -B clean test` | 17 | BUILD SUCCESS，Tests run: 1 |
 | `Test34` | `.\mvnw.cmd -B clean compile` | 21 | BUILD SUCCESS（无测试） |
 
-`jsj2434` 的测试会连本机 MySQL，跑之前确认 MySQL 8 已启动；表结构由 `mybatis.sql` 自动创建。
+`jsj2434` 的测试会连本机 MySQL，跑之前确认 MySQL 8 已启动并已用根 [`mybatis.sql`](mybatis.sql) 建好 `mybatis` 库。
 
 ## 已知限制
 
-- `demo` 与 `jsj2434` 都是课程演示：密码明文比较/存储，数据源账号 `root/root` 写在配置里，没有 CSRF、会话固定防护，不要当真实站点使用。
-- `jsj2434` 保留源示例的行为：登录不写 session、退出不销毁会话，所以主页用户名显示为空。
+- `demo` 与 `jsj2434` 都是课程演示：密码明文比较/存储（jsj2434 登录仍硬编码 `admin/123`），数据源账号 `root/root` 写在配置里，没有 CSRF、会话固定防护，不要当真实站点使用。
+- `jsj2434` 保留源示例行为：登录不写 session、退出不销毁会话。
+- `jsj2434` 当前只有上下文加载测试，Doctor/User 各路由无自动化覆盖，改动需人工或补测试验证。
 - `Test34` 只有 Hello World；`sy1` 只有模板，均非完整应用。
-- `demo.zip` / `jsj2434.rar` 是更早的快照，内容与目录中的源码不一致，不要以它们为准。
+- `demo.zip` / `jsj2434.rar` 是更早的快照，内容与目录中的源码不一致，不要以它们为准；其中 `jsj2434.rar` 已于 2026-11-03 用作覆盖 `jsj2434/` 的基准。
 - Windows 受限沙箱里直接构建可能因 `target/` 写入被拒而失败（`AccessDeniedException`），这是会话权限问题，不是工程缺陷。
 
 ## 文档与约定

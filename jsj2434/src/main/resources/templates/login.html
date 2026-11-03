@@ -5,15 +5,15 @@
     <title>Title</title>
 </head>
 <body>
-<!-- th:text 从模型读取 message，以文本方式显示 /logout2 提供的提示。 -->
-<div th:text="${message}"></div>
-<!-- POST 提交表单；输入框 name 对应控制器参数名，实现用户名和密码绑定。 -->
+<!--登录页面-->
+<div th:style="'color: red'" th:text="${message}"></div>
+
 <form action="/login" method="post">
-  <label for="username">用户名：</label>
-  <input type="text" id="username" name="username"><br><br>
-  <label for="password">密码：</label>
-  <input type="password" id="password" name="password"><br><br>
-  <input type="submit" value="登录">
+    <label for="username">用户名:</label>
+    <input type="text" id="username" name="username"><br><br>
+    <label for="password">密码:</label>
+    <input type="password" id="password" name="password"><br><br>
+    <input type="submit" value="登录">
 </form>
 </body>
 </html>

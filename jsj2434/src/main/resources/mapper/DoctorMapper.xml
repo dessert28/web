@@ -2,40 +2,47 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!-- SQL 映射文件，三个要点：
-     1) namespace 必须是 Mapper 接口的全限定名；
-     2) 语句 id 必须与接口方法名一致，否则调用时抛 Invalid bound statement (not found)；
-     3) application.properties 需配置 mybatis.mapper-locations=classpath*:mapper/**/*.xml，
-        否则本文件不会被加载（mybatis-spring-boot-starter 默认不扫描 mapper 目录）。 -->
 <mapper namespace="com.zjsru.mapper.DoctorMapper">
-    <select id="queryAllDoctors" resultType="com.zjsru.domain.Doctor">
+    <select id="queryAllDoctors" resultType="Doctor">
         select * from doctor_info
     </select>
-
-    <select id="queryDoctorById" resultType="com.zjsru.domain.Doctor">
-        select * from doctor_info where id = #{id}
+    <select id="queryDoctorById"  resultType="Doctor">
+        select * from doctor_info where id = #{doctorid}
     </select>
-
-    <select id="queryDoctorsByName" resultType="com.zjsru.domain.Doctor">
-        select * from doctor_info where doctorName = #{doctorName}
-    </select>
-
-    <insert id="insertDoctor">
-        insert into doctor_info(doctorName, gender, department, title, phone)
-        values(#{doctorName}, #{gender}, #{department}, #{title}, #{phone})
+    <insert id="addDoctor" parameterType="Doctor">
+        insert into doctor_info (doctorName, gender, phone, department, title)
+        values (#{doctorName}, #{gender},  #{phone}, #{department}, #{title})
     </insert>
-
-    <update id="updateDoctor">
-        update doctor_info
-        set doctorName = #{doctorName},
-            gender     = #{gender},
-            department = #{department},
-            title      = #{title},
-            phone      = #{phone}
-        where id = #{id}
-    </update>
-
-    <delete id="deleteDoctorById">
-        delete from doctor_info where id = #{id}
-    </delete>
+    <select id="queryDoctorsByCondition"  resultType="Doctor">
+        select * from doctor_info
+        <where>
+            <if test="doctorName != null and doctorName != ''">
+                doctorName like CONCAT('%', #{doctorName}, '%')
+            </if>
+            <if test="department != null and department != ''">
+                and department like CONCAT('%', #{department}, '%')
+            </if>
+            <if test="title != null and title != ''">
+                and title like CONCAT('%', #{title}, '%')
+            </if>
+        </where>
+    </select>
+    <!-- 根据单个条件动态查询医生信息：choose 只取第一个成立的分支，
+         姓名、科室都不填时走 otherwise，默认查主任医师 -->
+    <select id="queryDoctorsBySingleCondition" resultType="Doctor">
+        select * from doctor_info
+        <where>
+            <choose>
+                <when test="doctorName != null and doctorName != ''">
+                    doctorName like CONCAT('%', #{doctorName}, '%')
+                </when>
+                <when test="department != null and department != ''">
+                    department like CONCAT('%', #{department}, '%')
+                </when>
+                <otherwise>
+                    title = '主任医师'
+                </otherwise>
+            </choose>
+        </where>
+    </select>
 </mapper>

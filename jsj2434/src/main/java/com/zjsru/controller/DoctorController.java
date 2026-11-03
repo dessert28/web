@@ -4,80 +4,73 @@ import com.zjsru.domain.Doctor;
 import com.zjsru.service.DoctorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
 
-/** 医生信息控制器：所有方法都用 @ResponseBody 直接输出 JSON，不跳转模板。 */
 @Controller
 public class DoctorController {
-    // 注入医生业务层实现，控制器只负责接收参数并调用服务层。
     @Autowired
-    private DoctorService doctorService;
-
-    /** 查询 doctor_info 表全部医生，List 由 Spring 序列化为 JSON 数组。
-        注意：只写 @ResponseBody 没有路径映射时浏览器访问不到，必须先有 @GetMapping。 */
-    @GetMapping("/queryAllDoctors")
+    DoctorService doctorService;
+    //查询所有医生信息
+    @RequestMapping("/queryAllDoctors")
     @ResponseBody
     public List<Doctor> queryAllDoctors() {
+        List<Doctor> doctors = doctorService.queryAllDoctors();
+        return doctors;
+    }
+    //跳转医生列表页面：把医生集合放入模型，由模板 doctorList.html 渲染成表格
+    @RequestMapping("/doctorList")
+    public ModelAndView doctorList(ModelAndView modelAndView) {
         //1.调用业务逻辑方法
         List<Doctor> doctors = doctorService.queryAllDoctors();
+        //2.把数据交给模板，并指定视图名
+        modelAndView.addObject("doctors", doctors);
+        modelAndView.setViewName("doctorList");
+        return modelAndView;
+    }
+    //根据医生ID查询医生信息
+    @RequestMapping("/queryDoctorById")
+    @ResponseBody
+    public Doctor queryDoctorById(int id) {
+        Doctor doctor = doctorService.queryDoctorById(id);
+        return doctor;
+    }
+    //添加医生信息
+    @RequestMapping("/addDoctor")
+    @ResponseBody
+    public int addDoctor(Doctor doctor) {
+        return doctorService.addDoctor(doctor);
+    }
+    //条件查询（JSON）：表单参数绑定到 Doctor，返回符合条件的医生列表
+    @RequestMapping("/queryDoctorsByCondition")
+    @ResponseBody
+    public List<Doctor> queryDoctorsByCondition(Doctor doctor) {
+        //1.调用业务逻辑方法
+        List<Doctor> doctors = doctorService.queryDoctorsByCondition(doctor);
         //2.返回结果给前端
         return doctors;
     }
-
-    /** 按路径 id 查询单个医生，路径占位符 id 绑定到方法参数。 */
-    @GetMapping("/queryDoctorById/{id}")
-    @ResponseBody
-    public Doctor queryDoctorById(@PathVariable Integer id) {
+    //条件查询（页面）：把条件和结果一起交给 doctorQuery.html，输入框回显上一次的查询条件
+    @RequestMapping("/doctorQuery")
+    public ModelAndView doctorQuery(Doctor doctor, ModelAndView modelAndView) {
         //1.调用业务逻辑方法
-        Doctor doctor = doctorService.queryDoctorById(id);
+        List<Doctor> doctors = doctorService.queryDoctorsByCondition(doctor);
         //2.返回结果给前端
-        return doctor;
+        modelAndView.addObject("doctors", doctors);
+        modelAndView.addObject("condition", doctor);
+        modelAndView.setViewName("doctorQuery");
+        return modelAndView;
     }
-
-    /** 按医生姓名查询，同名可能有多条，因此返回 List。 */
-    @GetMapping("/queryDoctorsByName/{doctorName}")
+    //根据单个条件查询医生信息：choose 只取第一个成立的条件，都不填时默认查主任医师
+    @RequestMapping("/queryDoctorsBySingleCondition")
     @ResponseBody
-    public List<Doctor> queryDoctorsByName(@PathVariable String doctorName) {
+    public List<Doctor> queryDoctorsBySingleCondition(Doctor doctor) {
         //1.调用业务逻辑方法
-        List<Doctor> doctorList = doctorService.queryDoctorsByName(doctorName);
+        List<Doctor> doctors = doctorService.queryDoctorsBySingleCondition(doctor);
         //2.返回结果给前端
-        return doctorList;
-    }
-
-    /** 新增医生：表单参数绑定到 Doctor，返回受影响行数。 */
-    @PostMapping("/insertDoctor")
-    @ResponseBody
-    public int insertDoctor(Doctor doctor) {
-        //1.调用业务逻辑方法
-        int rows = doctorService.insertDoctor(doctor);
-        //2.返回结果给前端
-        return rows;
-    }
-
-    /** 修改医生：按 id 更新其余字段，返回受影响行数。 */
-    @PutMapping("/updateDoctor")
-    @ResponseBody
-    public int updateDoctor(Doctor doctor) {
-        //1.调用业务逻辑方法
-        int rows = doctorService.updateDoctor(doctor);
-        //2.返回结果给前端
-        return rows;
-    }
-
-    /** 删除医生：按路径 id 删除，返回受影响行数。 */
-    @DeleteMapping("/deleteDoctorById/{id}")
-    @ResponseBody
-    public int deleteDoctorById(@PathVariable Integer id) {
-        //1.调用业务逻辑方法
-        int rows = doctorService.deleteDoctorById(id);
-        //2.返回结果给前端
-        return rows;
+        return doctors;
     }
 }
