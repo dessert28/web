@@ -9,7 +9,7 @@
 | 目录 | 内容 | 技术栈 | 构建 / 测试（2026-10-23 实测） |
 | --- | --- | --- | --- |
 | [`demo/`](demo/) | 课堂参考实现：登录模块（index / login / main） | Spring Boot 4.1.1 · Java 21 · Thymeleaf | ✅ 1/1 通过（JDK 21） |
-| [`jsj2434/`](jsj2434/) | 课程实验复刻 + User 登录/列表 + Doctor 增删改查与条件查询 | Spring Boot 4.0.8 · Java 21 · Thymeleaf · MyBatis · MySQL 8 | ✅ 编译通过（2026-11-03 实测） |
+| [`jsj2434/`](jsj2434/) | 课程实验复刻 + User 登录/列表 + Doctor 增删改查与条件查询 | Spring Boot 4.0.8 · Java 21 · Thymeleaf · MyBatis · MySQL 8 | ✅ 编译 + 测试通过（2026-11-06 实测，Tests run: 1） |
 | [`shiyan2/`](shiyan2/) | 实验二：Thymeleaf 商品信息管理（添加 + 列表） | Spring Boot 4.1.1 · Java 17 · Thymeleaf | ✅ 1/1 通过（JDK 17） |
 | [`Test34/`](Test34/) | Maven 练习空壳：Hello World + MySQL 驱动 | Java 21 · mysql-connector-j 8.4.0 | ⚙️ 可编译，无测试 |
 | [`sy1/`](sy1/) | VS2022 ASP.NET Web 应用空模板 | .NET Framework 4.7.2 · IIS Express | ⛔ 未开发 |
@@ -41,7 +41,8 @@ web/
 ├── README.md                 本文件
 ├── demo.zip                  demo 的早期快照（与当前 demo/ 不同源，勿当源码用）
 ├── jsj2434.rar               jsj2434 课程原始压缩包（2026-11-03 按它覆盖过 jsj2434/）
-├── mybatis.sql               MySQL 库 mybatis 的全量建表 + 演示数据脚本（Navicat 导出，供 jsj2434 建表）
+├── javaweb.sql               MySQL 库 javaweb 的建库脚本（6 张表，幂等，jsj2434 当前数据源）
+├── mybatis.sql               MySQL 库 mybatis 的全量导出（Navicat，数十张表，历史对照用）
 └── LICENSE                   GPL-3.0
 ```
 
@@ -51,7 +52,7 @@ web/
 | --- | --- |
 | JDK | `demo`、`jsj2434`、`Test34` 需要 **JDK 21**（`D:\pc\.jdks\graalvm-jdk-21.0.7`）；`shiyan2` 需要 **JDK 17**（`D:\pc\.jdks\graalvm-jdk-17.0.12`）。PATH 上的 JDK 15 不能用于构建 |
 | Maven | 系统没有全局 `mvn`，一律用各项目自带的 `mvnw.cmd`（wrapper 3.3.4 / Maven 3.9.16）。`.mvn/settings.xml` 把依赖镜像到阿里云 |
-| MySQL | 只有 `jsj2434` 需要：MySQL 8，`localhost:3306`，账号 `root/root`，库名 `mybatis`（由 `mybatis.sql` 初始化） |
+| MySQL | 只有 `jsj2434` 需要：MySQL 8，`localhost:3306`，账号 `root/root`，库名 `javaweb`（由根目录 [`javaweb.sql`](javaweb.sql) 初始化） |
 | 端口 | `demo` 与 `jsj2434` 默认都占用 8080，不要同时启动；需要并行时加 `--server.port=8081` |
 
 ## 快速开始
@@ -65,7 +66,7 @@ $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
 # jsj2434：实验复刻 + 数据库认证
 cd jsj2434
 $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
-.\mvnw.cmd spring-boot:run        # 启动时自动执行 mybatis.sql 建表
+.\mvnw.cmd spring-boot:run        # 需先导入根目录 javaweb.sql（项目内无自动建表）
 
 # shiyan2：实验二
 cd shiyan2
@@ -102,7 +103,8 @@ cd <项目目录>
 
 - **User 模块**：登录后内部转发 `/selectAllUsers`，主页 `main.html` 以表格循环展示 `tb_users`；`/queryUserById/{id}`、`/queryUserByNameAndPassword/{u}/{p}` 查询接口。
 - **Doctor 模块**：`doctor_info` 表的查询 / 新增 / 列表页 / 条件查询页；`DoctorMapper.xml` 用 `<where>` 动态条件 + `like` 模糊匹配（姓名 / 科室 / 职称），新增 `doctorList.html`、`doctorQuery.html` 两个页面。
-- **数据库**：MySQL 库 `mybatis`（`localhost:3306`，`root/root`），依赖现成 `tb_users`、`doctor_info` 表；全量建表脚本在仓库根 [`mybatis.sql`](mybatis.sql)（Navicat 导出，含数十张表），当前 jsj2434 内没有自动建表配置。
+- **数据库**：MySQL 库 `javaweb`（`localhost:3306`，`root/root`），由仓库根 [`javaweb.sql`](javaweb.sql) 创建 6 张表（`department` / `doctor_info` / `account` / `patient` / `visit_record` / `tb_users`），脚本幂等可重复导入；项目内没有自动建表配置。旧的 `mybatis.sql` 保留作对照，切库只改 `spring.datasource.url`。
+- **科室**：`doctor_info` 只存 `department_id`，查询时 `left join department` 取回科室名；新增/更新同时接受 `departmentId` 与中文科室名。
 - **无全局异常处理**：`GlobalExceptionHandler`/`Result` 已删除，异常走 Spring Boot 默认处理。
 
 | 方法 | 路径 | 行为 |
@@ -152,11 +154,11 @@ VS2022 新建的 ASP.NET Web Application（.NET Framework 4.7.2），只有 `Ass
 | 项目 | 命令 | JDK | 结果 |
 | --- | --- | --- | --- |
 | `demo` | `.\mvnw.cmd -B clean test` | 21 | BUILD SUCCESS，Tests run: 1 |
-| `jsj2434` | `.\mvnw.cmd -B clean compile` | 21 | BUILD SUCCESS（仅编译；测试 1 个上下文用例，需 MySQL） |
+| `jsj2434` | `.\mvnw.cmd -B clean test` | 21 | BUILD SUCCESS，Tests run: 1, Failures: 0（2026-11-06 实跑，库 `javaweb`） |
 | `shiyan2` | `.\mvnw.cmd -B clean test` | 17 | BUILD SUCCESS，Tests run: 1 |
 | `Test34` | `.\mvnw.cmd -B clean compile` | 21 | BUILD SUCCESS（无测试） |
 
-`jsj2434` 的测试会连本机 MySQL，跑之前确认 MySQL 8 已启动并已用根 [`mybatis.sql`](mybatis.sql) 建好 `mybatis` 库。
+`jsj2434` 的测试会连本机 MySQL，跑之前确认 MySQL 8 已启动并已用根 [`javaweb.sql`](javaweb.sql) 建好 `javaweb` 库。
 
 ## 已知限制
 

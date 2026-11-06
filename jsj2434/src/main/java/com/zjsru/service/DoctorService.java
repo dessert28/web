@@ -16,4 +16,6 @@ public interface DoctorService {
     public int updateDoctor(Doctor doctor);
     // 根据多个医生ID批量查询
     public List<Doctor> queryDoctorsByIds(List<Integer> ids);
+    // 根据科室名称查科室ID（不存在返回 null）
+    public Integer queryDepartmentIdByName(String deptName);
 }

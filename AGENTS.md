@@ -26,7 +26,7 @@
 | JDK | `demo`、`jsj2434`、`Test34` 用 **JDK 21**：`D:\pc\.jdks\graalvm-jdk-21.0.7`；`shiyan2` 用 **JDK 17**：`D:\pc\.jdks\graalvm-jdk-17.0.12`。PATH 上的 `java` 是 15.0.1，不可用于构建 |
 | Maven | 本机**未安装** `mvn`。一律使用项目自带的 `.\mvnw.cmd`（wrapper 3.3.4，Maven 3.9.16 已缓存）；`Test34` 已补齐 wrapper |
 | 依赖镜像 | 不要删改 `.mvn/settings.xml` 的阿里云镜像与 `.mvn/maven.config` 的 `--settings`，离线/内网环境下它们是能否解析依赖的关键 |
-| MySQL | 仅 `jsj2434` 需要：MySQL 8 于 `localhost:3306`，`root/root`，库 **`mybatis`**；表结构由仓库根 [`mybatis.sql`](mybatis.sql)（Navicat 导出）创建，需手动导入，项目内无自动建表 |
+| MySQL | 仅 `jsj2434` 需要：MySQL 8 于 `localhost:3306`，`root/root`，库 **`javaweb`**；表结构由仓库根 [`javaweb.sql`](javaweb.sql) 创建（6 张表，自带 `CREATE DATABASE IF NOT EXISTS`，幂等可重复导入），项目内无自动建表。旧 [`mybatis.sql`](mybatis.sql) 保留作对照 |
 | 编码 | 源码与 HTML 为 UTF-8；PowerShell 查看中文输出可能乱码，判断构建结果看 `BUILD SUCCESS/FAILURE`、`Tests run:` 与退出码 |
 | 沙箱 | 受限文件沙箱下原地构建可能因写 `*/target/**` 被拒而失败（`AccessDeniedException`）。这属于**会话环境限制，不是项目缺陷**；请切到完全权限或在仓库外复制一份再构建 |
 
@@ -40,7 +40,7 @@ cd D:\project\githubclone\web\demo
 $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
 .\mvnw.cmd -B clean test
 
-# jsj2434（Java 21，需要本机 MySQL 8 已启动、mybatis 库已建好）—— 期望 Tests run: 1, Failures: 0
+# jsj2434（Java 21，需要本机 MySQL 8 已启动、javaweb 库已建好）—— 期望 Tests run: 1, Failures: 0
 cd D:\project\githubclone\web\jsj2434
 $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
 .\mvnw.cmd -B clean test
@@ -59,12 +59,12 @@ $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
 - 只跑相关测试类时用 `-Dtest=UserServiceTest`，但**交付前要跑一次全量**。
 - `sy1` 是 ASP.NET 空模板，需要 Windows + VS/MSBuild，本仓库**没有可用的构建路径**；涉及它时先说明这一前提，不要假装验证过。
 - 结论必须区分“**我实跑过**”与“**历史报告显示**”：`target/surefire-reports` 里的报告可能对应旧提交。
-- `jsj2434` 的测试会真实连接 MySQL；换机器前先确认 MySQL 已启动、`mybatis` 库及 `tb_users`/`doctor_info` 表已建好。
+- `jsj2434` 的测试会真实连接 MySQL；换机器前先确认 MySQL 已启动、`javaweb` 库及 `tb_users`/`doctor_info`/`department` 表已建好。
 
 ## 4. 代码约定
 
 - `demo` / `jsj2434`：分层为 `controller` / `service` / `domain`（`jsj2434` 另有 `mapper`）。控制器返回模板名或 `ModelAndView`；`@ResponseBody` 直接输出正文。
-- `jsj2434`（2026-11-03 覆盖回退后）：**User 模块** 走 `UserService` → `UserServiceImpl` → `UserMapper`（MyBatis 注解 SQL，查 `tb_users`）；**Doctor 模块** 走 `DoctorService` → `DoctorServiceImpl` → `DoctorMapper`（XML 映射 `DoctorMapper.xml`，查 `doctor_info`）。登录校验仍是硬编码 `admin/123`。目前**没有** `GlobalExceptionHandler`/`Result`，异常走默认处理，改 SQL 时同步检查仓库根 `mybatis.sql` 的表结构与两个 Mapper。
+- `jsj2434`（2026-11-06 `javaweb` 库迁移后）：**User 模块** 走 `UserService` → `UserServiceImpl` → `UserMapper`（MyBatis 注解 SQL，查 `tb_users`）；**Doctor 模块** 走 `DoctorService` → `DoctorServiceImpl` → `DoctorMapper`（XML 映射 `DoctorMapper.xml`，查 `doctor_info`）。`doctor_info` 只有 `department_id`，科室名靠 `left join department` 取回；新增/更新接受 `departmentId` 或中文科室名。登录校验仍是硬编码 `admin/123`。目前**没有** `GlobalExceptionHandler`/`Result`，异常走默认处理，改 SQL 时同步检查仓库根 `javaweb.sql` 的表结构与两个 Mapper。
 - `shiyan2`：数据在 `GoodsServiceImpl` 的静态集合里；模板用 `th:field` 绑定，字段名必须与 `Goods` 属性一致。
 - 新增页面/接口时，模板里的 `th:href="@{...}"`、`th:action="@{...}"` 与测试中的字符串断言（如 `action="/login" method="post"`）要保持一致。
 - 依赖版本保持项目现状（Spring Boot 4.x 系列），升级前先确认 JDK 与依赖坐标（注意 Boot 4 用的是 `spring-boot-starter-webmvc`、Jackson 3 的 `tools.jackson.*`）。

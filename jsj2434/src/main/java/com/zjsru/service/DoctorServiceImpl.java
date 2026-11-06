@@ -45,4 +45,9 @@ public class DoctorServiceImpl implements DoctorService {
     public List<Doctor> queryDoctorsByIds(List<Integer> ids) {
         return doctorMapper.queryDoctorsByIds(ids);
     }
+
+    @Override
+    public Integer queryDepartmentIdByName(String deptName) {
+        return doctorMapper.queryDepartmentIdByName(deptName);
+    }
 }

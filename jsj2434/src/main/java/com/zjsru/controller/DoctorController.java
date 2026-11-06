@@ -43,6 +43,12 @@ public class DoctorController {
     @RequestMapping("/addDoctor")
     @ResponseBody
     public int addDoctor(Doctor doctor) {
+        // javaweb 库的 doctor_info 只有 department_id（NOT NULL），科室可能是
+        // departmentId 数字，也可能是 department 中文名，这里统一成 departmentId：
+        // 都不给、或给了不存在的科室名时返回 0，避免抛出 NOT NULL / 外键异常
+        if (!resolveDepartmentId(doctor)) {
+            return 0;
+        }
         return doctorService.addDoctor(doctor);
     }
     //条件查询（JSON）：表单参数绑定到 Doctor，返回符合条件的医生列表
@@ -83,6 +89,13 @@ public class DoctorController {
         if (doctor.getId() == null || !hasAnyUpdateField(doctor)) {
             return 0;
         }
+        //只在本次请求确实提交了科室时才解析：只改姓名/职称/电话的请求不该被科室拦下来。
+        //若提交了中文科室名却查不到对应科室，说明参数有误，返回 0 而不是把 department_id 改成 NULL。
+        if (doctor.getDepartmentId() == null && notBlank(doctor.getDepartment())) {
+            if (!resolveDepartmentId(doctor)) {
+                return 0;
+            }
+        }
         //1.调用业务逻辑方法
         int rows = doctorService.updateDoctor(doctor);
         //2.返回受影响行数
@@ -91,12 +104,33 @@ public class DoctorController {
     //判断是否至少提交了一个可更新字段
     private boolean hasAnyUpdateField(Doctor doctor) {
         return notBlank(doctor.getDoctorName()) || notBlank(doctor.getGender())
-                || notBlank(doctor.getDepartment()) || notBlank(doctor.getTitle())
-                || notBlank(doctor.getPhone());
+                || notBlank(doctor.getDepartment()) || doctor.getDepartmentId() != null
+                || notBlank(doctor.getTitle()) || notBlank(doctor.getPhone());
     }
 
     private boolean notBlank(String value) {
         return value != null && value.trim().length() > 0;
+    }
+
+    /**
+     * 把请求里的科室统一解析成 departmentId 并写回 doctor。
+     * 优先用 departmentId（数字参数）；没有则用 department（科室中文名）去 department 表查。
+     *
+     * @return true 表示科室已确定；false 表示两者都没给，或给的科室名在 department 表里不存在
+     */
+    private boolean resolveDepartmentId(Doctor doctor) {
+        if (doctor.getDepartmentId() != null) {
+            return true;
+        }
+        if (!notBlank(doctor.getDepartment())) {
+            return false;
+        }
+        Integer id = doctorService.queryDepartmentIdByName(doctor.getDepartment().trim());
+        if (id == null) {
+            return false;
+        }
+        doctor.setDepartmentId(id);
+        return true;
     }
     //根据多个医生ID批量查询：/queryDoctorsByIds?ids=1,2,3
     @RequestMapping("/queryDoctorsByIds")

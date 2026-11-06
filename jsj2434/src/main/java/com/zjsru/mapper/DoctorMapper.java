@@ -22,4 +22,6 @@ public interface DoctorMapper {
     public int updateDoctor(Doctor doctor);
     // 根据多个医生ID批量查询
     public List<Doctor> queryDoctorsByIds(@Param("ids") List<Integer> ids);
+    // 根据科室名称查科室ID：doctor_info 只存 department_id，新增/更新时要把中文科室名转成ID
+    public Integer queryDepartmentIdByName(@Param("deptName") String deptName);
 }

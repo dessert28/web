@@ -1,10 +1,41 @@
-# HANDOFF.md — 当前交接状态（2026-11-03）
+# HANDOFF.md — 当前交接状态（2026-11-06）
 
-> 本节是最新状态，优先于下面所有历史章节。2026-11-03 的覆盖改动目前**只在工作区里，还没有任何提交**。
+> 本节是最新状态，优先于下面所有历史章节。2026-11-06 的 `javaweb` 库迁移改动**只在工作区里，还没有任何提交**。
 
-## 一句话现状
+## 一句话现状（2026-11-06）
 
-HEAD 是 `7560a92`（`jsj2434_20261023_01`，已与 `origin/main` 同步）。2026-11-03 上午，按用户指示用 `jsj2434.rar`（原始教学版压缩包）**重新覆盖了 `jsj2434/` 目录**，把上个版本（18 测试、全局异常、mybatis.sql 全量建表）回退成课程原始实现，并新增了两个 doctor 页面模板。所有改动都未提交、未推送；其他子项目（`demo`、`shiyan2`、`Test34`、`sy1`）本轮无改动。
+jsj2434 的数据源从 `mybatis` 库切到新的 `javaweb` 库，仓库根新增 [`javaweb.sql`](javaweb.sql)（自带建库、幂等、6 张表）。`doctor_info` 不再有 `department` 文本列，科室一律走 `department_id` → `department` 外键，`DoctorMapper.xml` 全部改为 `left join department` 取科室名，模板零改动。实跑验证：`javaweb.sql` 连续导入两次成功，`.\mvnw.cmd -B clean test` 为 `Tests run: 1, Failures: 0`，8081 端口起服务后逐条打完 22 条路由。所有改动未提交、未推送。
+
+### 2026-11-06 javaweb 库迁移（本轮）
+
+**背景**：`javaweb.sql` 原是一份 Navicat 直接导出的快照，有四个硬伤：① 没有 `CREATE DATABASE` / `USE`，导入即报 `No database selected`；② `DROP TABLE` + 裸 `INSERT`，重放会丢数据；③ 完全没有 `tb_users`，User 模块在新库上无表可查；④ 医生科室的 `department_id` 值与科室名对不上（李娜标 `department_id=2` 但科室写「外科」，实际在儿科）。
+
+**改动清单**：
+
+| 文件 | 改动 |
+| --- | --- |
+| `javaweb.sql`（新增，未跟踪） | 重写：`CREATE DATABASE IF NOT EXISTS javaweb` + `USE`；全部 `CREATE TABLE IF NOT EXISTS` 且去掉 `DROP`；`INSERT IGNORE` 保证幂等；表按依赖顺序 `department → doctor_info → account/patient/visit_record`；补 `tb_users`（5 行演示数据）；字符集 `utf8mb4`（原 `utf8` 在 MySQL 8 是 `utf8mb3`）；`department_id` 改 `NOT NULL` + 外键；医生 PK 重排 1..5 并修正科室映射 |
+| `domain/Doctor.java` | 新增 `Integer departmentId`（对应表列）；`department` 保留为 join 出来的展示字段 |
+| `resources/mapper/DoctorMapper.xml` | 新增 `<sql id="doctorColumns">` 与 `queryDepartmentIdByName`；5 条查询全部 `left join department` 并显式 `AS departmentId / AS department`（没开下划线映射）；`addDoctor` / `updateDoctor` 用 `<choose>` 支持传 `departmentId` 或中文科室名 |
+| `mapper/DoctorMapper.java` | 新增 `queryDepartmentIdByName(@Param("deptName") String)` |
+| `service/DoctorService.java`、`DoctorServiceImpl.java` | 同步新增该方法，纯透传 |
+| `controller/DoctorController.java` | 新增 `resolveDepartmentId`：科室归一，查不到就返回 0；`hasAnyUpdateField` 补 `departmentId != null` |
+| `resources/application.properties` | 库名 `javaweb`（此前已是工作区改动）；顺手修掉两行历史乱码注释 |
+| `jsj2434/README.md`、`README.md` | 库名、建库脚本、科室存储方式、测试矩阵同步；修掉根 README「启动时自动执行 mybatis.sql 建表」这句**错误描述**（项目实际无 `spring.sql.init.*`） |
+
+**实跑验证（2026-11-06）**：
+
+- `javaweb.sql` 连续 `source` 两次，两次 `exit=0`；导入后 `department=6 / doctor_info=5 / account=4 / patient=5 / visit_record=5 / tb_users=5`。
+- 外键完整性：`doctor_info` 无悬空 `department_id`（0 行），`visit_record` 无悬空 `doctor_id`/`patient_id`（0 行）。
+- `cd jsj2434; $env:JAVA_HOME='D:\pc\.jdks\graalvm-jdk-21.0.7'; .\mvnw.cmd -B clean test` → **BUILD SUCCESS**，`Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`（surefire 报告时间对应本次构建）。
+- 起服务 `--server.port=8081`（8080 可能被 demo 占），逐条实打：`/`(200)、`/toLogin`(200)、`POST /login`(200)、`/selectAllUsers`(5 用户)、`/queryUserById/1`、`/doctorList`(5 行，科室显示中文名)、`/doctorQuery`、`/queryAllDoctors`、`/queryDoctorById?id=2`、`/queryDoctorsByCondition`（姓名/科室两路都对）、`/queryDoctorsBySingleCondition`（空条件走 `主任医师`）、`/queryDoctorsByIds?ids=1,2`、`/queryDoctorsByIds?ids=`（空集合返回 `[]`）、`POST /addDoctor`（中文科室名=1、`departmentId`=1、不传=0、错科室=0）、`POST /updateDoctor`（只改职称=1、只改电话=1、只改科室=1、无字段=0、错科室=0）。
+
+**过程中发现并修掉的真缺陷**：`/updateDoctor` 最初无条件调用 `resolveDepartmentId`，导致「只改职称/电话」的请求因没传科室而被判 0。改成仅在本次请求确实带了科室信息时才解析。修复后重跑上述 5 种情形全部符合预期。
+
+**已知行为（非缺陷）**：`title` 条件是 `like '%主任医师%'`，会同时匹配「**副**主任医师」——这是课程原始 LIKE 设计，`/queryDoctorsByCondition?title=主任医师` 返回 5 条属正确表现；要精确匹配得改成 `=`。
+
+**未消除的风险**：① `javaweb`（utf8mb4）与 `mybatis`（utf8mb3）字符集不一致，跨库同步需统一；② `INSERT IGNORE` 会静默跳过主键冲突行，改数据请直接改表；③ Doctor/User 各路由仍无自动化测试，上述验证是手工实打，改动后需重跑；④ `mybatis.sql` 与 `javaweb.sql` 的 `doctor_info` 结构已分叉（前者有 `department` 列，后者只有 `department_id`），切换数据源时要一起换代码。
+
 
 ## 1. 2026-11-03 覆盖事件（最新）
 
