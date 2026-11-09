@@ -73,7 +73,7 @@
 2. **`archive/sy1` 无法构建**：ASP.NET 4.7.2 空模板，需 Windows + VS/MSBuild，本仓库没有构建路径。
 3. **课程遗留行为**（按 AGENTS 红线第 6 条保留现状）：登录不写 session、`/logout` 返回假的「张三」JSON、密码明文比较与存储、数据源 `root/root` 写在配置文件里。
 4. **`bak/` 体积**：55 个文件、约 1.79 MB，是仓库最大体积项之一。是否长期保留待用户决定，本轮未动。
-5. **根目录 `login-demo/`**：本机上存在一个**未被 git 跟踪**的 Spring Boot 工程（含 `.idea/`、`target/`、`_recon/`），来源不明，不在本次整理范围，**未触碰**。若确认无用可自行删除，或纳入仓库。
+5. **`archive/login-demo/`**：2026-11-09 在仓库根发现一个**未被 git 跟踪**的目录，整棵树 **0 个文件**、53 个空目录（`.idea`、`.mvn/wrapper`、`db`、`_recon`、`_run`、`src/main/java/com/example/logindemo/{config,security,user,web}`、`target/` 等），来源不明。按用户要求「所有东西都留着」，已移入 `archive/login-demo/` 并以 `README.md` + `.gitkeep` 留档（Git 不跟踪空目录，故目录结构本身无法入库）。
 6. **`DoctorController.queryDoctorById` 用裸 `int id`**：不传参数返回 400，属可接受行为，仅记录。
 
 ## 5. 历史：2026-11-03 覆盖事件及之后

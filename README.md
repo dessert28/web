@@ -41,6 +41,7 @@ mysql -uroot -p < mybatis.sql
 | [`archive/Test34/`](archive/Test34/) | Maven 空壳，仅 Hello World | Java 21 | 只读留档 |
 | [`archive/sy1/`](archive/sy1/) | ASP.NET Web 应用空模板 | .NET Framework 4.7.2 | 未开发，本仓库无法构建 |
 | [`archive/material-design-style-pack/`](archive/material-design-style-pack/) | jsj2434 界面风格包（含同名 `.zip`） | CSS / Tailwind 令牌 | 参考资产 |
+| [`archive/login-demo/`](archive/login-demo/) | 整理时发现的空目录骨架（0 个文件），来源不明，只留档说明 | — | 空壳留档 |
 
 归档工程各自的 README 在各自目录下；它们的构建命令已不纳入日常验证。
 
