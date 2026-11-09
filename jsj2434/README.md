@@ -1,12 +1,12 @@
 # jsj2434 — 课程实验复刻（User 登录/列表 + Doctor 查询/新增）
 
-在 [`demo/`](../demo/) 登录示例的基础上扩展为两个模块。2026-11-03 按 [`jsj2434.rar`](../jsj2434.rar) 覆盖回退为课程原始实现（当时的改动详见 [HANDOFF.md](../HANDOFF.md)）。
+在 [`archive/demo/`](../archive/demo/) 登录示例的基础上扩展为两个模块。2026-11-03 按 [`jsj2434.rar`](../jsj2434.rar) 覆盖回退为课程原始实现（当时的改动详见 [HANDOFF.md](../HANDOFF.md)）。
 
 包名 `com.zjsru`，端口 8080。
 
 - 技术栈：Spring Boot 4.0.8 · Java 21 · Thymeleaf · MyBatis · MySQL 8
 - 演示账号：`admin` / `123`
-- 界面：Material Design（风格来源 [`material-design-style-pack/`](../material-design-style-pack/)），**全离线**，不依赖任何 CDN
+- 界面：Material Design（风格来源 [`archive/material-design-style-pack/`](../archive/material-design-style-pack/)），**全离线**，不依赖任何 CDN
 
 ## 运行
 
