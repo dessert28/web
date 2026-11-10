@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjsru.mapper.DepartmentMapper">
+    <!-- 一对多关联查询的结果映射：
+         <id> 标记科室主键，MyBatis 靠它把多行结果合并成一个 Department，
+         同一个 id 的多条记录会被折叠，医生的数据落到 <collection> 的 doctorList 里。
+         notNullColumn="doctor_id"：LEFT JOIN 在「科室没有医生」时会产出一行
+         所有 doc 列都为 NULL 的记录，加上它 MyBatis 才不会把这条空行当成一个
+         字段全 null 的 Doctor，doctorList 会是空集合而不是 size=1 的空壳对象。 -->
+    <resultMap id="departmentWithDoctorResultMap" type="Department">
+        <id property="id" column="dept_id"/>
+        <result property="deptName" column="dept_name"/>
+        <result property="location" column="location"/>
+        <result property="deptPhone" column="dept_phone"/>
+        <collection property="doctorList" ofType="Doctor" notNullColumn="doctor_id">
+            <id property="id" column="doctor_id"/>
+            <result property="doctorName" column="doctorName"/>
+            <result property="gender" column="gender"/>
+            <result property="title" column="title"/>
+            <result property="phone" column="phone"/>
+            <result property="departmentId" column="dept_id"/>
+        </collection>
+    </resultMap>
+
+    <!-- 查询全部科室：单纯查科室表，不带医生。
+         resultType 走自动映射，必须给下划线列起驼峰别名，否则 deptName/deptPhone 装不上 -->
+    <select id="queryAllDepartments" resultType="Department">
+        select id,
+               dept_name  as deptName,
+               location   as location,
+               dept_phone as deptPhone
+        from doctor_department
+        order by id
+    </select>
+
+    <!-- 科室 + 医生关联查询：
+         LEFT JOIN 保证「科室存在但没有医生」时仍返回科室本身。
+         注意 WHERE 里的 doc.id IS NOT NULL 不能加在 ON 上——那会把无医生的科室整行滤掉。
+         这里对空医生的处理放在 resultMap 的 notNullColumn 上（见 resultMap 注释）。 -->
+    <select id="queryDepartmentInfoAndDoctorsByDeptId" resultMap="departmentWithDoctorResultMap">
+        SELECT
+            dept.id         AS dept_id,
+            dept.dept_name  AS dept_name,
+            dept.location   AS location,
+            dept.dept_phone AS dept_phone,
+            doc.id          AS doctor_id,
+            doc.doctorName  AS doctorName,
+            doc.gender      AS gender,
+            doc.title       AS title,
+            doc.phone       AS phone
+        FROM doctor_department dept
+        LEFT JOIN doctor_info doc ON doc.department_id = dept.id
+        WHERE dept.id = #{deptId}
+        ORDER BY doc.id
+    </select>
+</mapper>

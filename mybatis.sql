@@ -63,8 +63,21 @@ CREATE TABLE `doctor_department`  (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `dept_name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '科室名称',
   `location` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '科室位置',
+  `dept_phone` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '科室电话',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Compact;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Compact;
+
+-- ----------------------------
+-- Records of doctor_department
+-- 与 doctor_info.department（历史文本列）取值一致的科室种子数据，
+-- 供 DepartmentMapper 的「科室 + 医生」关联查询使用
+-- ----------------------------
+INSERT INTO `doctor_department` VALUES (1, '心内科', '门诊楼3层', '0571-88010001');
+INSERT INTO `doctor_department` VALUES (2, '儿科', '门诊楼2层', '0571-88010002');
+INSERT INTO `doctor_department` VALUES (3, '内科', '门诊楼4层', '0571-88010003');
+INSERT INTO `doctor_department` VALUES (4, '外科', '住院楼5层', '0571-88010004');
+INSERT INTO `doctor_department` VALUES (5, '神经科', '门诊楼6层', '0571-88010005');
+INSERT INTO `doctor_department` VALUES (6, '皮肤科', '门诊楼5层', '0571-88010006');
 
 -- ----------------------------
 -- Table structure for doctor_info
@@ -94,6 +107,12 @@ INSERT INTO `doctor_info` VALUES (7, '张三峰', 1, '神经科', '主任医师'
 INSERT INTO `doctor_info` VALUES (8, '杨欣悦', 0, '皮肤科', '主任医师', '13218678866', NULL);
 INSERT INTO `doctor_info` VALUES (9, '王启明', 0, '儿科', '副主任医师', '13666887788', NULL);
 INSERT INTO `doctor_info` VALUES (10, '王启明', 0, '儿科', '副主任医师', '13666887788', NULL);
+
+-- 回填 department_id：让 doctor_info 通过外键挂到 doctor_department 上，
+-- 否则 DepartmentMapper 的关联查询查不到任何医生
+UPDATE `doctor_info` SET `department_id` = (
+    SELECT `id` FROM `doctor_department` WHERE `dept_name` = `doctor_info`.`department`
+);
 
 -- ----------------------------
 -- Table structure for doctor_info_copy1
