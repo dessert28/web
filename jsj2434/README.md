@@ -1,4 +1,4 @@
-# jsj2434 — 课程实验复刻（User 登录/列表 + Doctor 查询/新增）
+# jsj2434 — 课程实验复刻（User 登录/列表 + Doctor 查询/新增 + Department 科室关联）
 
 在 [`archive/demo/`](../archive/demo/) 登录示例的基础上扩展为两个模块。2026-11-03 按 [`jsj2434.rar`](../jsj2434.rar) 覆盖回退为课程原始实现（当时的改动详见 [HANDOFF.md](../HANDOFF.md)）。
 
@@ -14,10 +14,10 @@
 $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
 .\mvnw.cmd spring-boot:run      # http://localhost:8080/
 .\mvnw.cmd -B clean compile     # 编译验证
-.\mvnw.cmd -B clean test        # 1 个上下文加载测试（需 MySQL）
+.\mvnw.cmd -B clean test        # 8 个测试（含 1 个上下文加载 + 7 个 Department 模块），需 MySQL
 ```
 
-前置条件：本机 MySQL 8 已启动，`localhost:3306`，账号 `root/root`，库 `mybatis` 已建好 `tb_users`、`doctor_info` 表。全量建表 + 演示数据脚本在仓库根 [`mybatis.sql`](../mybatis.sql)（Navicat 导出，含数十张表），手动导入一次即可：
+前置条件：本机 MySQL 8 已启动，`localhost:3306`，账号 `root/root`，库 `mybatis` 已建好 `tb_users`、`doctor_info`、`doctor_department` 表。全量建表 + 演示数据脚本在仓库根 [`mybatis.sql`](../mybatis.sql)（Navicat 导出，含数十张表），手动导入一次即可：
 
 ```
 mysql -uroot -p < ..\mybatis.sql
@@ -47,16 +47,20 @@ mysql -uroot -p < ..\mybatis.sql
 | GET | `/queryDoctorsByCondition` | 条件查询（JSON），按姓名 / 科室 / 职称 `like` 模糊 |
 | GET | `/queryDoctorsBySingleCondition` | 单条件查询（JSON），`<choose>` 只取第一个成立的条件，都不填默认主任医师 |
 | POST | `/updateDoctor` | 动态更新（JSON），只更新传入字段；id 为空或无可用字段时返回 0 |
+| GET | `/queryDepartmentInfoAndDoctorsByDeptId?deptId=` | 科室 + 医生一对多关联查询（JSON）；`deptId` 缺失或不存在时返回空正文（200） |
+| GET | `/departmentList` | 渲染 `departmentList.html`，每个科室一张卡片 + 该科室医生表格 |
 
 ## 代码结构
 
 - `controller/UserController.java`：页面 / 登录 / 退出 / 用户查询路由
 - `controller/DoctorController.java`：医生查询 / 列表 / 新增 / 条件查询 / 单条件查询 / 动态更新路由
+- `controller/DepartmentController.java`：科室关联查询 / 科室列表页路由
 - `mapper/UserMapper.java`：MyBatis 注解 SQL，操作 `tb_users`
 - `mapper/DoctorMapper.java` + `resources/mapper/DoctorMapper.xml`：MyBatis XML 映射，操作 `doctor_info`（`<where>` 条件、`<choose>` 单条件、`<set>` 动态更新、`<foreach>` 批量查询）
-- `service/`：`UserService`/`UserServiceImpl`、`DoctorService`/`DoctorServiceImpl`
-- `domain/Users.java`、`domain/Doctor.java`：Lombok `@Data`
-- `templates/`：`index` / `login` / `main` / `doctorList` / `doctorQuery`
+- `mapper/DepartmentMapper.java` + `resources/mapper/DepartmentMapper.xml`：MyBatis XML 映射，`doctor_department` **LEFT JOIN** `doctor_info`，用 `<resultMap>` + `<collection>` 做一对多聚合
+- `service/`：`UserService`/`UserServiceImpl`、`DoctorService`/`DoctorServiceImpl`、`DepartmentService`/`DepartmentServiceImpl`
+- `domain/Users.java`、`domain/Doctor.java`、`domain/Department.java`：Lombok `@Data`
+- `templates/`：`index` / `login` / `main` / `doctorList` / `doctorQuery` / `departmentList`
 
 ## 前端资产（Material Design，全离线）
 
@@ -74,5 +78,7 @@ mysql -uroot -p < ..\mybatis.sql
 - 登录不进数据库，`UserServiceImpl.login` 仍是硬编码 `admin/123`；登录不写 session、退出不销毁会话（课程原始行为）。
 - `DoctorMapper.xml#queryDoctorById` 用单参数 `#{doctorid}`（对应方法参数名 `doctorid`），若改成多个参数需加 `@Param`。
 - 无全局异常处理（`GlobalExceptionHandler`/`Result` 已随覆盖删除），异常走 Spring Boot 默认处理。
-- 测试仅 `Jsj2434ApplicationTests.contextLoads`。
+- 测试：`Jsj2434ApplicationTests.contextLoads`（1 个）+ `DepartmentModuleTests`（7 个，覆盖页面渲染、关联查询、缺参/不存在的科室、`<collection>` 一对多聚合与空科室回归）。
+- 科室关联查询依赖 `doctor_info.department_id` 外键。`mybatis.sql` 已补 `doctor_department` 的 6 条科室种子数据、`dept_phone` 列，以及把 `department_id` 按 `department` 文本回填的 `UPDATE`；**用旧库升级时需手动执行这三段**（仅重导 `mybatis.sql` 会 `DROP` 重建全部表）。
+- `doctor_info` 同时存在 `department`（历史文本列）与 `department_id`（外键）两套科室表达，关联查询只认后者，两者的口径应保持一致。
 - 界面改造前的快照与回滚步骤见 [`bak/jsj2434-md-20261103-110723/ROLLBACK.md`](../bak/jsj2434-md-20261103-110723/ROLLBACK.md)。

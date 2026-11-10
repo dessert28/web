@@ -1,14 +1,59 @@
-# HANDOFF.md — 当前交接状态（2026-11-09）
+# HANDOFF.md — 当前交接状态（2026-11-10）
 
 > 本节是最新状态，优先于下面所有历史章节。
 > 历史章节从「2026-11-03 覆盖事件」起保留供追溯，其中**状态类描述已不再准确**，不要据此操作。
 
 ## 一句话现状
 
-主项目是 **`jsj2434/`**，其余工程已归档到 `archive/`。GitHub 远端 `main` = 本地 `main`，工作区干净。
-2026-11-09 完成了一次仓库整理（归档 + 去重 + 文档重写），**已提交但尚未推送**（详见第 3 节）。
+主项目是 **`jsj2434/`**，其余工程已归档到 `archive/`。
+**2026-11-10 新增 Department（科室 + 医生一对多关联查询）模块**，测试从 1 个扩到 8 个并全部实跑通过；改动尚未提交（见第 0 节）。
 
-## 1. 本次整理（2026-11-09）
+## 0. 本次改动（2026-11-10）：Department 模块
+
+按用户提供的截图新增「科室 + 医生」一对多关联查询。截图中是 `Department.java` / `DepartmentMapper.java` / `DepartmentMapper.xml`（`<resultMap>` + `<collection>`），**这套代码原本在仓库里完全不存在**，属新增而非回退。
+
+### 0.1 新增文件
+
+| 文件 | 作用 |
+| --- | --- |
+| `domain/Department.java` | `id`/`deptName`/`location`/`deptPhone`/`List<Doctor> doctorList` |
+| `mapper/DepartmentMapper.java` | `queryAllDepartments()`、`queryDepartmentInfoAndDoctorsByDeptId(@Param("deptId"))` |
+| `resources/mapper/DepartmentMapper.xml` | `<resultMap>` + `<collection notNullColumn="doctor_id">`，`doctor_department LEFT JOIN doctor_info` |
+| `service/DepartmentService.java` / `DepartmentServiceImpl.java` | 传参守卫：`deptId == null` 直接返回 `null` |
+| `controller/DepartmentController.java` | `/queryDepartmentInfoAndDoctorsByDeptId`（JSON）、`/departmentList`（页面） |
+| `templates/departmentList.html` | 每个科室一张卡片 + 该科室医生表格，空科室显示「该科室暂无医生」 |
+| `test/.../DepartmentModuleTests.java` | 7 个测试 |
+
+### 0.2 修改文件
+
+| 文件 | 改动 |
+| --- | --- |
+| `domain/Doctor.java` | 追加 `Integer departmentId`、`Department dept`（原 6 个字段与 `department` 文本列**未动**，避免断既有模板） |
+| `mybatis.sql` | `doctor_department` 加 `dept_phone` 列 + 6 条科室种子数据；`doctor_info` 后追加按 `department` 文本回填 `department_id` 的 `UPDATE` |
+| `templates/doctorList.html`、`doctorQuery.html` | 导航加「科室与医生」入口 |
+| `jsj2434/README.md` | 路由表、代码结构、测试数、说明同步 |
+
+### 0.3 实跑验证（本机，2026-11-10）
+
+```
+cd D:\project\githubclone\web\jsj2434
+$env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
+.\mvnw.cmd -B clean test
+→ Tests run: 8, Failures: 0, Errors: 0, Skipped: 0 / BUILD SUCCESS
+```
+
+`spring-boot:run` 冒烟：`/departmentList` 200 渲染 6 个科室 8 名医生（儿科 3 人）；`/queryDepartmentInfoAndDoctorsByDeptId?deptId=1` 返回嵌套 JSON；`deptId=9999` 与不传 `deptId` 均 200 空正文（**不 500**）；`/`、`/toLogin`、`/doctorList`、`/queryAllDoctors` 未受影响。测试用的临时科室已自动清理，`doctor_department` 回到 6 行。
+
+### 0.4 两个实现坑（已修）
+
+1. `queryAllDepartments` 用 `resultType` 自动映射时，`dept_name`/`dept_phone` 下划线列**装不上驼峰属性**，`deptName`/`deptPhone` 会是 `null`。已在 SQL 里改成显式别名。
+2. `LEFT JOIN` 在「科室没有医生」时会产出一行 doc 列全 NULL 的记录，MyBatis 会把它当成一条**字段全 null 的 Doctor**，导致 `doctorList.size() == 1`、模板空状态判断失效。已用 `<collection notNullColumn="doctor_id">` 挡住，并补了回归测试。
+
+### 0.5 数据库变更（需要手动同步）
+
+`mybatis.sql` 已更新，但本机库是**直接 ALTER + INSERT + UPDATE** 落地的。换机器或用旧库时，只重导 `mybatis.sql` 会 `DROP` 重建全部 40 张表，要动生产数据请单独执行等价的三条 SQL（`ALTER TABLE ... ADD COLUMN dept_phone`、科室 `INSERT`、`department_id` 回填 `UPDATE`）。
+
+## 1. 上一次整理（2026-11-09）
 
 按用户要求「以 jsj2434 为主项目，其余归档」，完成了以下改动。
 
@@ -38,19 +83,18 @@
 - `AGENTS.md`：更新路径、JDK 路径、远端地址；补记本机与主开发机的 JDK 路径差异。
 - `jsj2434/README.md`：修正指向归档目录的相对链接。
 
-## 2. 环境事实修正（重要）
+## 2. 环境事实（2026-11-10 实测，修正此前错误）
 
-历次文档里的环境描述与实际不符，本次已核实并更正：
+历次文档里的环境描述与实际不符，本节为**当前实机**核实结果（本机为主开发机）：
 
-| 项 | 文档旧说法 | 实测（2026-11-09） |
+| 项 | 旧说法 | 实测（2026-11-10） |
 | --- | --- | --- |
-| JDK 路径 | `D:\pc\.jdks\...` | **本机为 `D:\project\.jdks\`**（`graalvm-jdk-17.0.12` / `graalvm-jdk-21.0.7` / `corretto-18.0.2`）；`D:\pc\.jdks` 不存在 |
-| PATH 上的 java | JDK 15.0.1，会失败 | **PATH 上根本没有 `java`**；`JAVA_HOME` 已指向 `D:\project\.jdks\graalvm-jdk-21.0.7` |
-| 远端 | SSH `git@github.com:...` | **`origin` 实际配置为 HTTPS**（`https://github.com/dessert28/web.git`），无凭据时 fetch/push 失败；SSH 通道本身可用 |
-| Maven 缓存 | 3.9.16 已缓存 | `~\.m2` 存在但**无 Spring Boot 依赖缓存**，首次构建需联网下载 |
-| 建表 | README 称「启动时自动执行 mybatis.sql 建表」 | **错**。`application.properties` 无 `spring.sql.init.*`，必须手工导入根 `mybatis.sql`；库名是 `mybatis` |
-
-**本机不是主开发机**（用户明确说明），因此本次整理**没有做构建验证**。
+| JDK 路径 | 本机为 `D:\project\.jdks\` | **实为 `D:\pc\.jdks\graalvm-jdk-21.0.7`**（另有 `graalvm-jdk-17.0.12`）；`D:\project\.jdks` 不存在 |
+| PATH 上的 java | 无 `java` | **有，但是 JDK 15.0.1**（`C:\Program Files\Common Files\Oracle\Java\javapath\java.exe`），跑 Boot 4 会失败。`$env:JAVA_HOME` 默认**为空**，必须每次显式设置 |
+| 远端 | HTTPS，无凭据时失败 | 目前 `origin` 为 `git@github.com:dessert28/web.git`（SSH），可直接 fetch/push |
+| Maven 缓存 | 无 Spring Boot 依赖 | 已有缓存，离线可构建 |
+| 建表 | 曾称「启动时自动执行 mybatis.sql」 | **仍为错**。`application.properties` 无 `spring.sql.init.*`，必须手工导入根 `mybatis.sql`；库名是 `mybatis` |
+| PowerShell | 未记录 | 本机为 **PowerShell 5.1**（无 `pwsh`）；`System.Drawing.Rectangle` 需用 `[System.Drawing.Rectangle]::new(...)` 而非 `New-Object` |
 
 ## 3. 提交状态与待办
 
@@ -69,12 +113,14 @@
 
 按 AGENTS 第 6 节，以下问题**不在本次整理范围内**：
 
-1. **测试覆盖极薄**：`jsj2434`、`archive/demo`、`archive/shiyan2` 各只有 1 个 `contextLoads`；`archive/Test34` 无测试。jsj2434 的 Doctor/User 全部路由**零自动化覆盖**，改动只能靠人工验证。这是仓库最大的质量风险。
+1. **测试覆盖仍然偏薄**：`jsj2434` 现有 8 个测试，其中 7 个只覆盖新增的 Department 模块；**User 与 Doctor 的全部路由依旧零自动化覆盖**，改动只能靠人工验证。这是仓库最大的质量风险。`archive/demo`、`archive/shiyan2` 各仍只有 1 个 `contextLoads`，`archive/Test34` 无测试。
 2. **`archive/sy1` 无法构建**：ASP.NET 4.7.2 空模板，需 Windows + VS/MSBuild，本仓库没有构建路径。
 3. **课程遗留行为**（按 AGENTS 红线第 6 条保留现状）：登录不写 session、`/logout` 返回假的「张三」JSON、密码明文比较与存储、数据源 `root/root` 写在配置文件里。
 4. **`bak/` 体积**：55 个文件、约 1.79 MB，是仓库最大体积项之一。是否长期保留待用户决定，本轮未动。
 5. **`archive/login-demo/`**：2026-11-09 在仓库根发现一个**未被 git 跟踪**的目录，整棵树 **0 个文件**、53 个空目录（`.idea`、`.mvn/wrapper`、`db`、`_recon`、`_run`、`src/main/java/com/example/logindemo/{config,security,user,web}`、`target/` 等），来源不明。按用户要求「所有东西都留着」，已移入 `archive/login-demo/` 并以 `README.md` + `.gitkeep` 留档（Git 不跟踪空目录，故目录结构本身无法入库）。
-6. **`DoctorController.queryDoctorById` 用裸 `int id`**：不传参数返回 400，属可接受行为，仅记录。
+6. **`DoctorController.queryDoctorById` 用裸 `int id`**：不传参数实际返回 **500**（此前记为 400），因为 `int` 无法接受缺参。新增的 `DepartmentController` 已改用包装类型 `Integer` + `required = false` 规避同类问题；Doctor 侧未动。
+7. **`doctor_info` 有两套科室表达**：`department`（varchar 文本）与 `department_id`（外键，2026-11-10 起已回填）。关联查询只认 `department_id`，新增医生时若只填文本列会导致关联查询查不到该医生。
+8. **JSON 中文双重编码**：`/queryAllDoctors` 等接口返回中文呈 mojibake（`application.properties` 的数据源参数含 `characterEncoding=utf-8`，但响应体未按 UTF-8 输出）。Department 新接口同样存在，属历史问题，未在本轮修。
 
 ## 5. 历史：2026-11-03 覆盖事件及之后
 
