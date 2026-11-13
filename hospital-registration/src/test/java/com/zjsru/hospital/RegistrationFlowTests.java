@@ -127,7 +127,7 @@ class RegistrationFlowTests {
     // ------------------------------------------------------------ 挂号
 
     @Test
-    @DisplayName("提交挂号 → 303 到结果页，库里多一行")
+    @DisplayName("提交挂号 → 302 到结果页，库里多一行")
     void submitAppointmentFlow() throws Exception {
         LocalDate date = LocalDate.now().plusDays(2);
         int before = countRows();
@@ -250,7 +250,7 @@ class RegistrationFlowTests {
     // ------------------------------------------------------------ 医生端
 
     @Test
-    @DisplayName("医生端默认显示今天；patientDate 参数下只看到自己那天的预约")
+    @DisplayName("医生端默认显示今天；带 date 参数时只看到该日期的预约")
     void doctorWorkbench() throws Exception {
         LocalDate today = LocalDate.now();
         jdbcTemplate.update("INSERT INTO tb_appointment(doctor_id, user_id, patient_name, patient_gender,"
