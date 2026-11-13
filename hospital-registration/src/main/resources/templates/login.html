@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('登录 - 预约挂号')}"></head>
+<body class="min-h-screen bg-surface-dim text-on-surface font-sans antialiased flex items-center justify-center px-4 py-8">
+
+<main class="w-full max-w-md rounded-xl bg-white p-6 md:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] transition-all ease-[cubic-bezier(0.4,0,0.2,1)] duration-[250ms]">
+
+    <div class="flex flex-col items-center">
+        <div class="rounded-full w-12 h-12 flex items-center justify-center text-white bg-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"
+                 aria-hidden="true" focusable="false">
+                <path fill-rule="evenodd"
+                      d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z"
+                      clip-rule="evenodd"/>
+            </svg>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-sans font-medium tracking-tight mt-4">登录</h1>
+    </div>
+
+    <div th:if="${message}" class="rounded-md bg-[#fde7e9] text-[#b00020] px-3 py-2 text-sm mt-4 mb-2 flex items-start gap-2"
+         role="alert">
+        <span th:text="${message}">错误提示</span>
+    </div>
+
+    <form th:action="@{/login}" method="post" class="mt-4">
+        <!-- 登录身份：患者查 tb_users，医生查 doctor_info -->
+        <div class="flex gap-3 mb-4">
+            <label class="flex-1 cursor-pointer">
+                <input type="radio" name="loginType" value="patient" class="peer sr-only"
+                       th:checked="${loginType == null or loginType == '' or loginType == 'patient'}">
+                <span class="block text-center rounded-full border border-gray-400 px-4 py-2 text-sm
+                             peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
+                             transition-colors duration-200">我是患者</span>
+            </label>
+            <label class="flex-1 cursor-pointer">
+                <input type="radio" name="loginType" value="doctor" class="peer sr-only"
+                       th:checked="${loginType == 'doctor'}">
+                <span class="block text-center rounded-full border border-gray-400 px-4 py-2 text-sm
+                             peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
+                             transition-colors duration-200">我是医生</span>
+            </label>
+        </div>
+
+        <div class="md-field relative mb-4">
+            <input id="username" name="username" type="text" placeholder=" " required th:value="${username}"
+                   class="peer w-full rounded-md border border-gray-400 bg-transparent px-3 pt-6 pb-2 text-base focus:border-[#6200ee] focus:outline-none transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+            <label for="username" class="pointer-events-none">用户名（医生填姓名）</label>
+        </div>
+        <div class="md-field relative mb-4">
+            <input id="password" name="password" type="password" placeholder=" " required
+                   class="peer w-full rounded-md border border-gray-400 bg-transparent px-3 pt-6 pb-2 text-base focus:border-[#6200ee] focus:outline-none transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+            <label for="password" class="pointer-events-none">密码</label>
+        </div>
+
+        <input type="hidden" name="redirect" th:value="${redirect}">
+
+        <button type="submit"
+                class="md-ripple w-full rounded-full bg-primary text-white font-medium min-h-12 px-6 hover:shadow-lg transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] active:duration-100">
+            登录
+        </button>
+    </form>
+
+    <div class="mt-6 text-center text-xs md:text-sm text-[#757575] leading-6">
+        <p>患者演示账号：15998815467 / 123（或 admin / 123）</p>
+        <p>医生演示账号：张伟 / 123（姓名 + 密码）</p>
+    </div>
+
+    <p class="mt-6 text-center">
+        <a th:href="@{/home}" class="text-primary text-sm" style="text-decoration:none">← 返回科室首页（无需登录）</a>
+    </p>
+
+</main>
+</body>
+</html>

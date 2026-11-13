@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('无权访问 - 预约挂号')}"></head>
+<body class="min-h-screen bg-surface-dim text-on-surface font-sans antialiased flex items-center justify-center px-4 py-8">
+
+<main class="w-full max-w-md rounded-xl bg-white p-6 md:p-8 text-center shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)]">
+    <p class="text-5xl font-sans font-medium text-[#b00020]">403</p>
+    <h1 class="text-xl md:text-2xl font-sans font-medium tracking-tight mt-3">无权访问</h1>
+    <p class="text-sm md:text-base text-[#757575] mt-2">
+        当前账号没有访问该页面的权限（医生工作台仅医生可进入）。
+    </p>
+    <div class="mt-6 flex flex-wrap gap-3 justify-center">
+        <a th:href="@{/home}"
+           class="rounded-full bg-primary text-white hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-10 px-6 inline-flex items-center justify-center md:ripple"
+           style="text-decoration:none">返回科室首页</a>
+        <a th:href="@{/logout}"
+           class="rounded-full bg-transparent text-primary border border-primary hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-10 px-6 inline-flex items-center justify-center md:ripple"
+           style="text-decoration:none">切换账号</a>
+    </div>
+</main>
+</body>
+</html>

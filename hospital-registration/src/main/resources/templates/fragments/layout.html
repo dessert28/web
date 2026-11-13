@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title}">预约挂号</title>
+    <script th:src="@{/vendor/tailwindcss-3.4.16.js}"></script>
+    <script th:src="@{/vendor/md-material.config.js}"></script>
+    <link rel="stylesheet" th:href="@{/vendor/md-roboto.css}">
+    <link rel="stylesheet" th:href="@{/css/md-material.css}">
+</head>
+<body>
+
+<!-- 顶部导航栏：登录态不同，右侧按钮不同 -->
+<header th:fragment="appbar(title, active)" class="md-appbar px-4 md:px-6 lg:px-8">
+    <div class="md-appbar__inner max-w-6xl mx-auto flex items-center justify-between gap-4">
+        <a th:href="@{/home}" class="font-sans font-medium tracking-tight text-lg md:text-xl text-white"
+           style="text-decoration:none">预约挂号系统</a>
+        <nav class="flex flex-wrap items-center gap-3 md:gap-4 text-sm">
+            <a th:href="@{/home}"
+               th:classappend="${active == 'home'} ? 'underline underline-offset-4' : ''"
+               class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">科室首页</a>
+            <a th:if="${loginUser != null and loginUser.patient}" th:href="@{/myAppointments}"
+               th:classappend="${active == 'mine'} ? 'underline underline-offset-4' : ''"
+               class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">我的预约</a>
+            <a th:if="${loginUser != null and loginUser.doctor}" th:href="@{/doctor/appointments}"
+               th:classappend="${active == 'workbench'} ? 'underline underline-offset-4' : ''"
+               class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">医生工作台</a>
+
+            <span th:if="${loginUser != null}" class="text-white/80 text-xs md:text-sm"
+                  th:text="'当前：' + ${loginUser.displayName} + '（' + ${loginUser.role.label} + '）'">当前用户</span>
+            <a th:if="${loginUser != null}" th:href="@{/logout}"
+               class="rounded-full border border-white/70 text-white px-3 py-1 md:ripple"
+               style="text-decoration:none">退出</a>
+            <a th:if="${loginUser == null}" th:href="@{/toLogin}"
+               class="rounded-full bg-white text-primary px-3 py-1 md:ripple font-medium"
+               style="text-decoration:none">登录</a>
+        </nav>
+    </div>
+</header>
+
+<!-- 消息条：成功 / 错误共用，tone 控制配色 -->
+<div th:fragment="alert(message, tone)"
+     th:if="${message != null and message != ''}"
+     th:classappend="${tone == 'ok'} ? 'bg-[#e6f4ea] text-[#137333]' : 'bg-[#fde7e9] text-[#b00020]'"
+     class="rounded-md px-3 py-2 text-sm mb-4 flex items-start gap-2" role="alert">
+    <span th:text="${message}">提示</span>
+</div>
+
+<!-- 科室卡片列表：给一个 Department 列表直接出网格。
+     循环写在片段内部、卡片本身上，避免 th:each 与 th:replace 挤在同一标签上。 -->
+<div th:fragment="departmentGrid(departments)"
+     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+    <a th:each="dept : ${departments}"
+       th:href="@{'/department/' + ${dept.id}}"
+       class="block rounded-xl bg-white p-4 md:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] transition-all ease-[cubic-bezier(0.4,0,0.2,1)] duration-[250ms] hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(0,0,0,0.25),0_10px_10px_rgba(0,0,0,0.22)]"
+       style="text-decoration:none;color:inherit">
+        <div class="flex items-start justify-between gap-3">
+            <h3 class="font-sans font-medium tracking-tight text-lg md:text-xl"
+                th:text="${dept.deptName}">科室</h3>
+            <span class="rounded-full bg-[#ede7f6] text-[#6200ee] text-xs px-2 py-1 shrink-0"
+                  th:text="'ID ' + ${dept.id}">ID</span>
+        </div>
+        <p class="text-sm text-[#757575] mt-2"><span>位置：</span><span th:text="${dept.location} ?: '未登记'">位置</span></p>
+        <p class="text-sm text-[#757575] mt-1"><span>电话：</span><span th:text="${dept.deptPhone} ?: '未登记'">电话</span></p>
+        <p class="mt-3 text-sm text-primary font-medium">进入科室 →</p>
+    </a>
+</div>
+
+<!-- 检索结果网格：item 是 DepartmentSearchResult，额外列出命中的医生 -->
+<div th:fragment="searchResultGrid(results)"
+     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+    <a th:each="item : ${results}"
+       th:href="@{'/department/' + ${item.department.id}}"
+       class="block rounded-xl bg-white p-4 md:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] transition-all ease-[cubic-bezier(0.4,0,0.2,1)] duration-[250ms] hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(0,0,0,0.25),0_10px_10px_rgba(0,0,0,0.22)]"
+       style="text-decoration:none;color:inherit">
+        <div class="flex items-start justify-between gap-3">
+            <h3 class="font-sans font-medium tracking-tight text-lg md:text-xl"
+                th:text="${item.department.deptName}">科室</h3>
+            <span class="rounded-full bg-[#ede7f6] text-[#6200ee] text-xs px-2 py-1 shrink-0"
+                  th:text="'ID ' + ${item.department.id}">ID</span>
+        </div>
+        <p class="text-sm text-[#757575] mt-2"><span>位置：</span><span th:text="${item.department.location} ?: '未登记'">位置</span></p>
+        <p class="text-sm text-[#757575] mt-1"><span>电话：</span><span th:text="${item.department.deptPhone} ?: '未登记'">电话</span></p>
+        <div th:if="${!item.matchedDoctors.isEmpty()}" class="mt-3 border-t border-[#eeeeee] pt-3">
+            <p class="text-xs text-[#6200ee] mb-1">匹配到医生：</p>
+            <p class="text-sm text-[#424242]">
+                <span th:each="doc, st : ${item.matchedDoctors}"><span th:text="${doc.doctorName}">医生</span><span
+                        th:if="${!st.last}">、</span></span>
+            </p>
+        </div>
+        <p class="mt-3 text-sm text-primary font-medium">进入科室 →</p>
+    </a>
+</div>
+
+
+</body>
+</html>

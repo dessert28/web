@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('预约结果 - 预约挂号')}"></head>
+<body class="min-h-screen bg-surface-dim text-on-surface font-sans antialiased">
+
+<header th:replace="~{fragments/layout :: appbar('预约结果', 'mine')}"></header>
+
+<main class="max-w-3xl mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-12">
+
+    <section th:if="${appointment != null and !appointment.cancelled}"
+             class="rounded-xl bg-white p-6 md:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)]">
+        <div class="flex items-start gap-3">
+            <div class="rounded-full w-10 h-10 bg-[#e6f4ea] text-[#137333] flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"
+                     aria-hidden="true" focusable="false">
+                    <path fill-rule="evenodd"
+                          d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z"
+                          clip-rule="evenodd"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-sans font-medium tracking-tight">预约成功</h1>
+                <p class="text-sm md:text-base text-[#757575] mt-1">
+                    请按预约日期与时段到院就诊，如需变更请先取消预约。
+                </p>
+            </div>
+        </div>
+
+        <dl class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-sm md:text-base">
+            <div class="rounded-md bg-[#fafafa] px-3 py-2">
+                <dt class="text-[#757575] text-xs">预约流水号</dt>
+                <dd class="text-[#212121] font-medium" th:text="${appointment.serialNo}">APT000001</dd>
+            </div>
+            <div class="rounded-md bg-[#fafafa] px-3 py-2">
+                <dt class="text-[#757575] text-xs">所属科室</dt>
+                <dd class="text-[#212121]" th:text="${appointment.deptName} ?: '未登记'">科室</dd>
+            </div>
+            <div class="rounded-md bg-[#fafafa] px-3 py-2">
+                <dt class="text-[#757575] text-xs">医生</dt>
+                <dd class="text-[#212121]"
+                    th:text="${appointment.doctorName} + (${appointment.doctorTitle} != null ? ' · ' + ${appointment.doctorTitle} : '')">医生</dd>
+            </div>
+            <div class="rounded-md bg-[#fafafa] px-3 py-2">
+                <dt class="text-[#757575] text-xs">就诊日期 / 时段</dt>
+                <dd class="text-[#212121]">
+                    <span th:text="${appointment.visitDate}">2026-11-20</span>
+                    <span class="mx-1">·</span>
+                    <span th:text="${appointment.timeSlot}">上午 09:00-10:00</span>
+                </dd>
+            </div>
+            <div class="rounded-md bg-[#fafafa] px-3 py-2">
+                <dt class="text-[#757575] text-xs">就诊人</dt>
+                <dd class="text-[#212121]" th:text="${appointment.patientLabel}">姓名（性别）</dd>
+            </div>
+            <div class="rounded-md bg-[#fafafa] px-3 py-2">
+                <dt class="text-[#757575] text-xs">联系电话</dt>
+                <dd class="text-[#212121]" th:text="${appointment.patientPhone}">电话</dd>
+            </div>
+            <div class="rounded-md bg-[#fafafa] px-3 py-2">
+                <dt class="text-[#757575] text-xs">预约状态</dt>
+                <dd class="text-[#137333]" th:text="${appointment.statusLabel}">待就诊</dd>
+            </div>
+            <div class="rounded-md bg-[#fafafa] px-3 py-2">
+                <dt class="text-[#757575] text-xs">提交时间</dt>
+                <dd class="text-[#212121]"
+                    th:text="${appointment.createTime != null} ? ${#temporals.format(appointment.createTime, 'yyyy-MM-dd HH:mm')} : '-'">时间</dd>
+            </div>
+        </dl>
+
+        <div th:if="${appointment.remark != null and appointment.remark != ''}"
+             class="mt-4 rounded-md bg-[#fafafa] px-3 py-2 text-sm">
+            <span class="text-[#757575] text-xs block">备注</span>
+            <span th:text="${appointment.remark}">备注内容</span>
+        </div>
+
+        <div class="mt-6 flex flex-wrap gap-3 md:gap-4">
+            <!-- 取消预约：POST，避免被预抓取；点一次即失效由服务端按钮守卫 -->
+            <form th:action="@{/appointment/cancel}" method="post" class="inline">
+                <input type="hidden" name="id" th:value="${appointment.id}">
+                <input type="hidden" name="from" value="result">
+                <button type="submit"
+                        class="rounded-full bg-transparent text-[#b00020] border border-[#b00020] hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-12 px-6 inline-flex items-center justify-center md:ripple"
+                        onclick="return confirm('确认取消该预约吗？');">
+                    取消预约
+                </button>
+            </form>
+            <a th:href="@{/myAppointments}"
+               class="rounded-full bg-primary text-white hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-12 px-6 inline-flex items-center justify-center md:ripple"
+               style="text-decoration:none">查看我的预约</a>
+            <a th:href="@{/home}"
+               class="rounded-full bg-transparent text-primary border border-primary hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-12 px-6 inline-flex items-center justify-center md:ripple"
+               style="text-decoration:none">继续浏览科室</a>
+        </div>
+    </section>
+
+    <!-- 已取消 / 取消后回显 -->
+    <section th:if="${appointment != null and appointment.cancelled}"
+             class="rounded-xl bg-white p-6 md:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)]">
+        <h1 class="text-xl md:text-2xl font-sans font-medium tracking-tight text-[#b00020]">预约已取消</h1>
+        <p class="text-sm md:text-base text-[#757575] mt-2">
+            流水号 <span th:text="${appointment.serialNo}">APT000001</span>
+            · 医生 <span th:text="${appointment.doctorName}">医生</span>
+            · <span th:text="${appointment.visitDate}">日期</span>
+            <span th:text="${appointment.timeSlot}">时段</span>
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3 md:gap-4">
+            <a th:href="@{/home}"
+               class="rounded-full bg-primary text-white hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-12 px-6 inline-flex items-center justify-center md:ripple"
+               style="text-decoration:none">重新预约</a>
+            <a th:href="@{/myAppointments}"
+               class="rounded-full bg-transparent text-primary border border-primary hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-12 px-6 inline-flex items-center justify-center md:ripple"
+               style="text-decoration:none">我的预约</a>
+        </div>
+    </section>
+
+    <!-- 查不到 / 不属于当前用户 -->
+    <section th:if="${appointment == null}"
+             class="rounded-xl bg-white p-6 text-center text-[#757575] shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)]">
+        <p th:text="${message} ?: '预约不存在，或不属于当前账号'">预约不存在</p>
+        <a th:href="@{/myAppointments}" class="text-primary text-sm mt-3 inline-block"
+           style="text-decoration:none">查看我的预约 →</a>
+    </section>
+
+</main>
+
+<footer class="bg-[#f5f5f5] text-[#757575] py-8 px-4 md:px-6 lg:px-8 mt-8">
+    <div class="max-w-6xl mx-auto text-sm">© 2026 预约挂号系统 · 实验二：基于 Spring Boot 集成 MyBatis 实现患者挂号</div>
+</footer>
+
+</body>
+</html>

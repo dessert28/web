@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('科室首页 - 预约挂号')}"></head>
+<body class="min-h-screen bg-surface-dim text-on-surface font-sans antialiased">
+
+<header th:replace="~{fragments/layout :: appbar('科室首页', 'home')}"></header>
+
+<main class="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-12">
+
+    <!-- 首页 Hero + 检索框：未登录也可直接浏览全部科室 -->
+    <section class="rounded-xl bg-primary text-white p-6 md:p-10">
+        <h1 class="text-2xl md:text-3xl font-sans font-medium tracking-tight">选择科室，预约就诊</h1>
+        <p class="mt-2 text-sm md:text-base text-white/85">
+            共 <span th:text="${departments != null ? #lists.size(departments) : 0}">0</span>
+            个科室。浏览科室信息无需登录，进入科室查看医生并预约挂号时需要登录。
+        </p>
+
+        <form th:action="@{/search}" method="get" class="mt-6 flex flex-col sm:flex-row gap-3 md:gap-4">
+            <div class="md-field relative flex-1">
+                <input id="keyword" name="keyword" type="text" placeholder=" " th:value="${keyword}"
+                       class="peer w-full rounded-md border border-white/60 bg-white/95 text-[#212121] px-3 pt-6 pb-2 text-base focus:border-white focus:outline-none transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+                <label for="keyword" class="pointer-events-none"
+                       style="color:#6200ee">搜索科室 / 门诊 / 医生</label>
+            </div>
+            <button type="submit"
+                    class="rounded-full bg-white text-primary hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-12 px-6 inline-flex items-center justify-center md:ripple">
+                搜索
+            </button>
+            <a th:if="${searchMode}" th:href="@{/home}"
+               class="rounded-full border border-white text-white hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-12 px-6 inline-flex items-center justify-center md:ripple"
+               style="text-decoration:none">返回全部</a>
+        </form>
+    </section>
+
+    <!-- 检索结果模式 -->
+    <section th:if="${searchMode}" class="mt-8">
+        <h2 class="text-lg md:text-xl font-sans font-medium tracking-tight">
+            检索「<span th:text="${keyword}">关键字</span>」的结果
+            <span class="text-sm text-[#757575] font-normal">
+                共 <span th:text="${results != null ? #lists.size(results) : 0}">0</span> 个科室
+            </span>
+        </h2>
+
+        <div th:if="${results != null and !#lists.isEmpty(results)}" class="mt-4">
+            <div th:replace="~{fragments/layout :: searchResultGrid(${results})}"></div>
+        </div>
+
+        <div th:if="${results == null or #lists.isEmpty(results)}"
+             class="mt-4 rounded-xl bg-white p-6 text-center text-sm md:text-base text-[#757575] shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)]">
+            没有找到匹配「<span th:text="${keyword}">关键字</span>」的科室或门诊，请换个关键词试试。
+        </div>
+    </section>
+
+    <!-- 全部科室 -->
+    <section th:unless="${searchMode}" class="mt-8">
+        <h2 class="text-lg md:text-xl font-sans font-medium tracking-tight">全部科室</h2>
+        <div th:if="${departments != null and !#lists.isEmpty(departments)}" class="mt-4">
+            <div th:replace="~{fragments/layout :: departmentGrid(${departments})}"></div>
+        </div>
+        <div th:if="${departments == null or #lists.isEmpty(departments)}"
+             class="mt-4 rounded-xl bg-white p-6 text-center text-sm md:text-base text-[#757575] shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)]">
+            暂无科室数据，请先执行 db/experiment2-appointment.sql 导入种子数据。
+        </div>
+    </section>
+
+    <!-- 未登录提示 -->
+    <div th:if="${loginUser == null}"
+         class="mt-8 rounded-xl bg-white p-4 md:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <p class="text-sm md:text-base text-[#757575]">
+            当前未登录，只能浏览科室信息。登录后可查看医生详情并提交预约挂号。
+        </p>
+        <a th:href="@{/toLogin}"
+           class="rounded-full bg-primary text-white hover:shadow-lg transition-all duration-200 font-medium ease-[cubic-bezier(0.4,0,0.2,1)] active:scale-[0.98] min-h-10 px-6 inline-flex items-center justify-center md:ripple"
+           style="text-decoration:none">去登录</a>
+    </div>
+
+</main>
+
+<footer class="bg-[#f5f5f5] text-[#757575] py-8 px-4 md:px-6 lg:px-8 mt-8">
+    <div class="max-w-6xl mx-auto text-sm">© 2026 预约挂号系统 · 实验二：基于 Spring Boot 集成 MyBatis 实现患者挂号</div>
+</footer>
+
+</body>
+</html>
