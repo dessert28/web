@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjsru.hospital.mapper.AppointmentMapper">
+
+    <!--
+      公共结果映射：tb_appointment LEFT JOIN doctor_info LEFT JOIN doctor_department，
+      科室名走 department_id 外键（doctor_info.department 是历史文本列，可能与科室表不一致）。
+    -->
+    <resultMap id="appointmentWithDoctorResultMap" type="Appointment">
+        <id column="id" property="id"/>
+        <result column="doctor_id" property="doctorId"/>
+        <result column="user_id" property="userId"/>
+        <result column="patient_name" property="patientName"/>
+        <result column="patient_gender" property="patientGender"/>
+        <result column="patient_phone" property="patientPhone"/>
+        <result column="patient_id_card" property="patientIdCard"/>
+        <result column="visit_date" property="visitDate"/>
+        <result column="time_slot" property="timeSlot"/>
+        <result column="status" property="status"/>
+        <result column="remark" property="remark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="doctor_name" property="doctorName"/>
+        <result column="doctor_title" property="doctorTitle"/>
+        <result column="dept_name" property="deptName"/>
+    </resultMap>
+
+    <sql id="baseJoin">
+        SELECT appt.id,
+               appt.doctor_id,
+               appt.user_id,
+               appt.patient_name,
+               appt.patient_gender,
+               appt.patient_phone,
+               appt.patient_id_card,
+               appt.visit_date,
+               appt.time_slot,
+               appt.status,
+               appt.remark,
+               appt.create_time,
+               doc.doctorName AS doctor_name,
+               doc.title      AS doctor_title,
+               dept.dept_name AS dept_name
+        FROM tb_appointment appt
+                 LEFT JOIN doctor_info doc ON doc.id = appt.doctor_id
+                 LEFT JOIN doctor_department dept ON dept.id = doc.department_id
+    </sql>
+
+    <!-- 新增预约，回填自增主键 -->
+    <insert id="insertAppointment" parameterType="Appointment"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO tb_appointment (doctor_id,
+                                    user_id,
+                                    patient_name,
+                                    patient_gender,
+                                    patient_phone,
+                                    patient_id_card,
+                                    visit_date,
+                                    time_slot,
+                                    status,
+                                    remark)
+        VALUES (#{doctorId},
+                #{userId},
+                #{patientName},
+                #{patientGender},
+                #{patientPhone},
+                #{patientIdCard},
+                #{visitDate},
+                #{timeSlot},
+                0,
+                #{remark})
+    </insert>
+
+    <select id="queryById" resultMap="appointmentWithDoctorResultMap">
+        <include refid="baseJoin"/>
+        WHERE appt.id = #{id}
+    </select>
+
+    <select id="queryByIdAndUserId" resultMap="appointmentWithDoctorResultMap">
+        <include refid="baseJoin"/>
+        WHERE appt.id = #{id}
+          AND appt.user_id = #{userId}
+    </select>
+
+    <select id="queryByUserId" resultMap="appointmentWithDoctorResultMap">
+        <include refid="baseJoin"/>
+        WHERE appt.user_id = #{userId}
+        ORDER BY appt.visit_date DESC, appt.id DESC
+    </select>
+
+    <select id="countActiveBySlot" resultType="int">
+        SELECT COUNT(*)
+        FROM tb_appointment
+        WHERE doctor_id = #{doctorId}
+          AND visit_date = #{visitDate}
+          AND time_slot = #{timeSlot}
+          AND status = 0
+    </select>
+
+    <!-- 用受影响行数判断是否真的取消了：别人的预约、已取消的预约都会返回 0 -->
+    <update id="cancelByIdAndUserId">
+        UPDATE tb_appointment
+        SET status = 1
+        WHERE id = #{id}
+          AND user_id = #{userId}
+          AND status = 0
+    </update>
+
+    <select id="queryByDoctorAndDate" resultMap="appointmentWithDoctorResultMap">
+        <include refid="baseJoin"/>
+        WHERE appt.doctor_id = #{doctorId}
+          AND appt.visit_date = #{visitDate}
+        <if test="status != null">
+            AND appt.status = #{status}
+        </if>
+        ORDER BY appt.time_slot, appt.id
+    </select>
+
+    <select id="queryByDoctorAndDateRange" resultMap="appointmentWithDoctorResultMap">
+        <include refid="baseJoin"/>
+        WHERE appt.doctor_id = #{doctorId}
+          AND appt.visit_date BETWEEN #{from} AND #{to}
+        <if test="status != null">
+            AND appt.status = #{status}
+        </if>
+        ORDER BY appt.visit_date, appt.time_slot, appt.id
+    </select>
+
+</mapper>

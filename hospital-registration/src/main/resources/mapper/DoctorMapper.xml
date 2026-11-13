@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjsru.hospital.mapper.DoctorMapper">
+
+    <!-- 医生 + 所属科室名的公共列 -->
+    <sql id="doctorColumns">
+        doc.id,
+        doc.doctorName,
+        doc.gender,
+        doc.department,
+        doc.title,
+        doc.phone,
+        doc.specialty,
+        doc.department_id,
+        dept.dept_name AS dept_name
+    </sql>
+
+    <!-- 查询所有医生信息 -->
+    <select id="queryAllDoctors" resultType="Doctor">
+        select *
+        from doctor_info
+        order by id
+    </select>
+
+    <!-- 根据医生ID查询医生信息（单个参数，XML 里用 @Param 指定的 doctorid） -->
+    <select id="queryDoctorById" resultType="Doctor">
+        select *
+        from doctor_info
+        where id = #{doctorid}
+    </select>
+
+    <!-- 添加医生信息 -->
+    <insert id="addDoctor" parameterType="Doctor">
+        insert into doctor_info(doctorName, gender, department, title, phone, department_id)
+        values (#{doctorName}, #{gender}, #{department}, #{title}, #{phone}, #{departmentId})
+    </insert>
+
+    <!-- 根据条件查询医生信息：姓名 / 科室 / 职称，条件为空即不限 -->
+    <select id="queryDoctorsByCondition" resultType="Doctor">
+        select *
+        from doctor_info
+        <where>
+            <if test="doctorName != null and doctorName != ''">
+                doctorName like concat('%', #{doctorName}, '%')
+            </if>
+            <if test="department != null and department != ''">
+                and department like concat('%', #{department}, '%')
+            </if>
+            <if test="title != null and title != ''">
+                and title like concat('%', #{title}, '%')
+            </if>
+        </where>
+        order by id
+    </select>
+
+    <!-- 根据单个条件查询：姓名优先，其次科室，都没有就用默认职称 -->
+    <select id="queryDoctorsBySingleCondition" resultType="Doctor">
+        select *
+        from doctor_info
+        <choose>
+            <when test="doctorName != null and doctorName != ''">
+                where doctorName like concat('%', #{doctorName}, '%')
+            </when>
+            <when test="department != null and department != ''">
+                where department like concat('%', #{department}, '%')
+            </when>
+            <otherwise>
+                where title = '主任医师'
+            </otherwise>
+        </choose>
+        order by id
+    </select>
+
+    <!-- 动态更新：只更新传入的非空字段 -->
+    <update id="updateDoctor" parameterType="Doctor">
+        update doctor_info
+        <set>
+            <if test="doctorName != null and doctorName != ''">doctorName = #{doctorName},</if>
+            <if test="gender != null and gender != ''">gender = #{gender},</if>
+            <if test="department != null and department != ''">department = #{department},</if>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="phone != null and phone != ''">phone = #{phone},</if>
+            <if test="departmentId != null">department_id = #{departmentId},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 根据多个医生ID批量查询；ids 为空时用 1 = 2 兜住，避免生成 in () -->
+    <select id="queryDoctorsByIds" resultType="Doctor">
+        select *
+        from doctor_info
+        <choose>
+            <when test="ids != null and ids.size() > 0">
+                where id in
+                <foreach collection="ids" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                where 1 = 2
+            </otherwise>
+        </choose>
+        order by id
+    </select>
+
+    <!-- 医生登录：姓名 + 密码（密码列由 db/experiment2-appointment.sql 追加） -->
+    <select id="queryDoctorByNameAndPassword" resultType="Doctor">
+        select *
+        from doctor_info
+        where doctorName = #{doctorName}
+          and password = #{password}
+        order by id
+        limit 1
+    </select>
+
+    <!-- 关键字检索医生：姓名 / 文本科室 / 职称 / 专业专长 -->
+    <select id="queryDoctorsByKeyword" resultType="Doctor">
+        select *
+        from doctor_info
+        where doctorName like concat('%', #{keyword}, '%')
+           or department like concat('%', #{keyword}, '%')
+           or title like concat('%', #{keyword}, '%')
+           or specialty like concat('%', #{keyword}, '%')
+        order by id
+    </select>
+
+    <!-- 该科室下的医生（带科室名），按 id 排序 -->
+    <select id="queryDoctorsByDeptId" resultType="Doctor">
+        select
+        <include refid="doctorColumns"/>
+        from doctor_info doc
+        left join doctor_department dept on dept.id = doc.department_id
+        where doc.department_id = #{deptId}
+        order by doc.id
+    </select>
+
+</mapper>

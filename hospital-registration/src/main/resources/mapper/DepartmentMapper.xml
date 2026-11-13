@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjsru.hospital.mapper.DepartmentMapper">
+
+    <!--
+      科室 + 医生的一对多映射。
+      注意 notNullColumn="doctor_id"：LEFT JOIN 在「科室没有医生」时会产出一行
+      doc 列全为 NULL 的伪记录，没有它 resultMap 会造出一个字段全 null 的空壳 Doctor，
+      模板里的 #lists.isEmpty 就失效了。
+    -->
+    <resultMap id="departmentWithDoctorResultMap" type="Department">
+        <id column="dept_id" property="id"/>
+        <result column="dept_name" property="deptName"/>
+        <result column="location" property="location"/>
+        <result column="dept_phone" property="deptPhone"/>
+        <collection property="doctorList" ofType="Doctor" notNullColumn="doctor_id">
+            <id column="doctor_id" property="id"/>
+            <result column="doctor_name" property="doctorName"/>
+            <result column="gender" property="gender"/>
+            <result column="title" property="title"/>
+            <result column="phone" property="phone"/>
+            <result column="specialty" property="specialty"/>
+            <result column="dept_id" property="departmentId"/>
+        </collection>
+    </resultMap>
+
+    <!--
+      科室列表：显式写驼峰别名，避免依赖 map-underscore-to-camel-case
+      （dept_name → deptName 在部分配置下会映射失败）。
+    -->
+    <select id="queryAllDepartments" resultType="Department">
+        select id        as id,
+               dept_name as deptName,
+               location  as location,
+               dept_phone as deptPhone
+        from doctor_department
+        order by id
+    </select>
+
+    <!--
+      科室详情 + 医生列表。
+      过滤条件必须留在 WHERE 里（不能挪进 ON），否则无医生的科室整行会被过滤掉，
+      科室本身查不出来。
+    -->
+    <select id="queryDepartmentInfoAndDoctorsByDeptId" resultMap="departmentWithDoctorResultMap">
+        select dept.id          as dept_id,
+               dept.dept_name   as dept_name,
+               dept.location    as location,
+               dept.dept_phone  as dept_phone,
+               doc.id           as doctor_id,
+               doc.doctorName   as doctor_name,
+               doc.gender       as gender,
+               doc.title        as title,
+               doc.phone        as phone,
+               doc.specialty    as specialty
+        from doctor_department dept
+                 left join doctor_info doc on doc.department_id = dept.id
+        where dept.id = #{deptId}
+        order by doc.id
+    </select>
+
+    <select id="queryDepartmentById" resultType="Department">
+        select id        as id,
+               dept_name as deptName,
+               location  as location,
+               dept_phone as deptPhone
+        from doctor_department
+        where id = #{deptId}
+    </select>
+
+    <!-- 关键字检索科室：名称 / 位置 / 电话 -->
+    <select id="queryDepartmentsByKeyword" resultType="Department">
+        select id        as id,
+               dept_name as deptName,
+               location  as location,
+               dept_phone as deptPhone
+        from doctor_department
+        where dept_name like concat('%', #{keyword}, '%')
+           or location like concat('%', #{keyword}, '%')
+           or dept_phone like concat('%', #{keyword}, '%')
+        order by id
+    </select>
+
+</mapper>
