@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjsru.mapper.DepartmentMapper">
+    <!--结果集映射-->
+    <resultMap id="departmentWithDoctorResultMap" type="com.zjsru.domain.Department">
+        <id property="deptId" column="dept_id"/>
+        <result property="deptName" column="dept_name"/>
+        <result property="location" column="location"/>
+        <result property="deptPhone" column="dept_phone"/>
+        <collection property="doctorList" ofType="com.zjsru.domain.Doctor">
+            <id property="id" column="doc_id"/>
+            <result property="doctorName" column="doctorName"/>
+            <result property="gender" column="gender"/>
+            <result property="title" column="title"/>
+            <result property="phone" column="doc_phone"/>
+        </collection>
+    </resultMap>
+    <select id="queryDepartmentInfoAndDoctorsByDeptId" resultMap="departmentWithDoctorResultMap">
+        SELECT
+        dept.id as dept_id,dept.dept_name,dept.location,dept.phone as dept_phone,
+        doc.id as doc_id,doc.doctorName,doc.gender,doc.title,doc.phone as doc_phone
+        FROM department dept,doctor_info doc
+        where dept.id = doc.department_id and dept.id=#{deptId}
+    </select>
+</mapper>

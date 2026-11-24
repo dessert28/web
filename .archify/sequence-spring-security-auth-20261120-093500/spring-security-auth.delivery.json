@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "5855a1c8-a2b1-4518-9efe-7d07b909ed27",
+  "status": "failed",
+  "command": "deliver",
+  "stage": "render",
+  "input": "D:\\project\\githubclone\\web\\.archify\\sequence-spring-security-auth-20261120-093500\\candidate.json",
+  "output": "D:\\project\\githubclone\\web\\.archify\\sequence-spring-security-auth-20261120-093500\\spring-security-auth.html",
+  "artifact": {
+    "sha256": "fe9b69bf6b24a4b46f043f3f4da827dfa8647400f29e8bf60f1357b934d848ab",
+    "bytes": 762187
+  },
+  "error": "Sequence layout validation failed:\n- Label \"SecurityFilterChain\" (~129px) is wider than the 109px participant box — shorten it.\n- Label \"UserDetailsService\" (~122px) is wider than the 109px participant box — shorten it.\n- Label \"Controller + 视图\" (~116px) is wider than the 109px participant box — shorten it."
+}

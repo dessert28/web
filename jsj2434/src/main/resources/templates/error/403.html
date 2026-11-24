@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>403 无权访问</title>
+    <link rel="stylesheet" th:href="@{/css/md-material.css}">
+    <style>
+        body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; background: #f5f5f5; color: #212121; }
+        .bar { background: #6200ee; color: #fff; padding: 16px 24px; font-size: 18px; font-weight: 600; }
+        .wrap { max-width: 560px; margin: 72px auto; background: #fff; border-radius: 14px; padding: 40px 32px; box-shadow: 0 2px 10px rgba(0,0,0,.12); text-align: center; }
+        .code { font-size: 64px; font-weight: 700; color: #b00020; line-height: 1; }
+        h1 { font-size: 22px; margin: 16px 0 8px; }
+        p { color: #616161; line-height: 1.7; margin: 8px 0 24px; }
+        .hint { background: #fde7e9; color: #b00020; border-radius: 8px; padding: 12px 16px; font-size: 14px; text-align: left; }
+        a { display: inline-block; margin-top: 24px; background: #6200ee; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 999px; font-size: 15px; }
+    </style>
+</head>
+<body>
+<div class="bar">我的网站</div>
+<main class="wrap">
+    <div class="code">403</div>
+    <h1>无权访问该页面</h1>
+    <p>你已登录，但当前角色没有访问这个地址的权限。</p>
+    <div class="hint">
+        用户管理（<code>/selectAllUsers</code>）仅限 <b>ADMIN</b>；<br>
+        医生数据维护（<code>/addDoctor</code>、<code>/updateDoctor</code>）限 <b>ADMIN / DOCTOR</b>；<br>
+        科室与医生浏览对三种角色开放。
+    </div>
+    <a th:href="@{/toLogin}">返回登录页</a>
+</main>
+</body>
+</html>

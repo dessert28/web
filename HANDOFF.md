@@ -5,8 +5,75 @@
 
 ## 一句话现状
 
-主项目是 **`jsj2434/`**，其余工程已归档到 `archive/`。
-**2026-11-10 新增 Department（科室 + 医生一对多关联查询）模块**，测试从 1 个扩到 8 个并全部实跑通过；改动尚未提交（见第 0 节）。
+主项目是 **`jsj2434/`**，其余工程已归档到 `archive/`；**`hospital-registration/`** 是 2026-11-13 新增的实验二独立子项目（:8082，39 测试，已提交推送，详见其自身文档）。
+**2026-11-17 在 jsj2434 补全 Spring Security 7 认证改造**；**2026-11-20 把认证来源换成老师给的 1117 样本 `sys_user` 三表**，测试 14 → 20 全部实跑通过；改动均尚未提交（见第 0-新3 节）。
+
+## 0-新3. 本次改动（2026-11-20）：jsj2434 接入 1117 样本的数据库认证
+
+老师新给的 `1117/` 样本包含 `sys_user` / `sys_role` / `sys_user_role` 三张 RBAC 表（导出 SQL + 一份 `jsj2434` 旧快照）。核对结果：
+
+- `mybatis` 库里**三张表已存在**，结构与样本一致（`utf8mb3`、唯一键、外键），账号 `admin`/`doctor`/`patient`、角色 `ADMIN`/`DOCTOR`/`PATIENT`、绑定 `1→1 / 2→2 / 3→3` 均已就位；
+- 样本密码哈希实测对应明文 **`1234`**（对 `123` 全部不匹配），这是本次最容易被忽略的坑；
+- 1117 的 Java 源码是旧快照（登录仍硬编码 `admin/123`），**没有任何 Security 配置**，真正可用的是三表数据模型。
+
+据此改动：
+
+- **`service/DataBaseUserDeatilsService.java`（空类 → 实现）**：`implements UserDetailsService`，用 `JdbcTemplate` 查 `sys_user`（含 `enabled`）与 `sys_user_role → sys_role`，返回 `User.withUsername(...).roles(...).disabled(!enabled)`；查不到用户抛 `UsernameNotFoundException`，不区分「账号不存在」与「密码错误」。
+- **`config/WebAuthConfig.java`**：删除 `InMemoryUserDetailsManager` Bean，只保留 `BCryptPasswordEncoder` 与 `SecurityFilterChain`；由 Spring Security 自动装配 `DaoAuthenticationProvider`，避免容器里出现两个 `UserDetailsService`。
+- **`controller/UserController.java`**：删除与过滤器冲突的 `/login`、`/logout` 方法（Security 已接管）；`/toLogin` 读取 `?error` / `?logout` 并翻译成页面提示，失败不再只是 URL 变化。
+- **`pom.xml`**：按样本补 `spring-security-test`（本地 `7.0.7` 已缓存）。**未加** `thymeleaf-extras-springsecurity6`：本地仓库没有、与 Security 7 的兼容性未验证，页面暂未使用 `sec:` 标签。
+- **`SecurityConfigTests.java`**：登录密码 `123` → `1234`；新增 6 个用例（`doctor` 数据库账号可登录、旧明文 `123` 被拒、未知账号被拒、登录页 error/logout 提示、userdata 角色映射、未知用户抛异常）。
+- **`db/rbac-auth.sql`（新增，仓库根）**：按样本重建的幂等建表脚本，只把 `DROP TABLE` 改成 `CREATE TABLE IF NOT EXISTS`、跳过样本里 `id=4` 的空名脏角色；**未执行**，因为库里三表已存在，留作重装环境用。
+
+### 实跑验证（本机 2026-11-20）
+
+```
+cd D:\project\githubclone\web\jsj2434
+$env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
+.\mvnw.cmd -B -o clean test
+→ Tests run: 20, Failures: 0, Errors: 0, Skipped: 0 / BUILD SUCCESS
+```
+
+`admin/1234` 能登录成功本身就是证据：旧的内存用户密码是 `123`，BCrypt 校验 `1234` 必然失败；现在 `doctor/1234` 也能登录，说明认证确实落到 `sys_user`。
+
+### 风险 / 需知
+
+1. **登录密码从 `123` 变成 `1234`**，账号为 `admin` / `doctor` / `patient`。旧的 `admin/123` 会失败。
+2. 角色已参与授权（2026-11-20 追加）：`ADMIN` 可进用户管理；`ADMIN`/`DOCTOR` 可做医生增改；三种角色都可浏览科室与医生列表。登录后按角色跳转：`ADMIN → /selectAllUsers`、`DOCTOR → /doctorList`、`PATIENT → /departmentList`。
+3. `UserService.login` 的硬编码判断、`UserController` 已删除的 `/login` 逻辑不再被调用；按 AGENTS 红线未删 `UserServiceImpl.login`。
+4. `hospital-registration` 未受影响：它继续用 `tb_users` / `doctor_info`，39 个测试基线不变。
+
+## 0-新. 本次改动（2026-11-17）：jsj2434 Spring Security 改造
+
+接手时 `jsj2434` 的 `config/WebAuthConfig.java` 是**未写完的骨架**（`User.builder()` 处断掉，无法编译），`pom.xml` 已加 `spring-boot-starter-security`、`application.properties` 已加明文 `spring.security.user.*`，处于半成品状态。本次补全为真正可用的 Security：
+
+- **`config/WebAuthConfig.java`（补全）**：`@EnableWebSecurity` + 三个 Bean —— `BCryptPasswordEncoder`、`InMemoryUserDetailsManager`（内存用户 `admin/123`，BCrypt 加密）、`SecurityFilterChain`。
+  - 放行：`/`、`/toLogin`、`/login`、`/css/**`、`/vendor/**`、`/webjars/**`、`/favicon.ico`、`/error`；其余 `anyRequest().authenticated()`。
+  - `formLogin`：loginPage `/toLogin`、processingUrl `/login`（字段 `username`/`password`）、success `/selectAllUsers`、failure `/toLogin?error`；`logout`：`/logout` → `/toLogin?logout`；CSRF 关闭（登录模板无 token）。
+- **`application.properties`**：移除 `spring.security.user.name/password`（与自定义 UserDetailsService 冲突且误导），改为注释说明。
+- **`DepartmentModuleTests.java`**：加 `@AutoConfigureMockMvc(addFilters = false)` —— 该类只测业务契约，不让 Security 拦截（**未改任何断言**）。
+- **`SecurityConfigTests.java`（新增，6 个测试）**：走真实过滤器链，覆盖公开页、未登录重定向、登录成功/失败、带会话访问受保护路由、注销失效。
+- **`jsj2434/README.md`**：技术栈、测试数（8→14）、`/login` 与 `/logout` 路由、说明同步。
+
+### 实跑验证（本机 2026-11-17）
+
+```
+cd D:\project\githubclone\web\jsj2434
+$env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
+.\mvnw.cmd -B -o clean test
+→ Tests run: 14, Failures: 0, Errors: 0, Skipped: 0 / BUILD SUCCESS
+```
+
+改造前同命令为 **Tests run: 8, Failures: 4**（4 个 Department MockMvc 测试被 401 拦截）；补全后 14/14 通过。
+
+### 行为变化 / 风险（需知）
+
+1. **全站（除公开页）现在需要登录**，未登录访问业务路由 302 到 `/toLogin` —— 与旧版「随便访问」不同，属改造预期。
+2. **`/logout` 行为被覆盖**：旧的 GET `/logout` 返回假「张三」JSON，现在被 Security LogoutFilter 前置拦截，销毁会话并重定向 `/toLogin?logout`。`UserController.logout()` 同名方法不再生效（源码保留未删）。
+3. `UserServiceImpl.login` 的硬编码 `admin/123` 判断、`UserController.login` 仍是死代码；按 AGENTS 红线不删历史演示代码，仅注明。
+4. CSRF 关闭（课程演示口径）；若将来上 CSRF 需给 `login.html` 表单加 token。
+5. 改动**尚未提交、未推送**；按 AGENTS 第 5 节提交前先 `git status` 确认无 `target/`、IDE 状态。
+6. 工作区里的 `jsj2434/domain/Users.java`（新增 `private String id;`）**非本次改造内容**，本会话未修改该文件，提交时请单独甄别归属。另有根目录下 `hospital-registration.zip`、`zero-one-his2607*` 等未跟踪文件，与本次无关。
 
 ## 0. 本次改动（2026-11-10）：Department 模块
 

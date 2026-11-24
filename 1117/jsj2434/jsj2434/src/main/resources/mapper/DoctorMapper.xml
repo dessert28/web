@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjsru.mapper.DoctorMapper">
+    <select id="queryAllDoctors" resultType="Doctor">
+        select * from doctor_info
+    </select>
+    <select id="queryDoctorById"  resultType="Doctor">
+        select * from doctor_info where id = #{doctorid}
+    </select>
+    <insert id="addDoctor" parameterType="Doctor">
+        insert into doctor_info (doctorName, gender, phone, department, title)
+        values (#{doctorName}, #{gender},  #{phone}, #{title})
+    </insert>
+    <select id="queryDoctorsByCondition" resultType="Doctor">
+        select * from doctor_info
+        <where>
+        <if test="doctorName != null and doctorName != ''">
+            and doctorName like CONCAT('%', #{doctorName}, '%')
+        </if>
+        <if test="title != null and title != ''">
+            and title like CONCAT('%', #{title}, '%')
+        </if>
+
+        </where>
+    </select>
+    <!--根据单条件动态查询医生信息-->
+    <select id="queryDoctorsBySingleCondition" resultType="Doctor">
+        select * from doctor_info
+        <where>
+            <choose>
+                <when test="doctorName != null and doctorName != ''">
+                    doctorName like CONCAT('%', #{doctorName}, '%')
+                </when>
+                <otherwise>
+                    title = '主任医师'
+                </otherwise>
+            </choose>
+        </where>
+    </select>
+    <!--更新医生信息-->
+    <update id="updateDoctor" parameterType="Doctor">
+        update doctor_info
+        <set>
+            <if test="doctorName != null and doctorName != ''">
+                doctorName = #{doctorName},
+            </if>
+            <if test="gender != null and gender != ''">
+                gender = #{gender},
+            </if>
+            <if test="phone != null and phone != ''">
+                phone = #{phone},
+            </if>
+            <if test="title != null and title != ''">
+                title = #{title}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+    <resultMap id="DoctorInfoAndDepartmentInfo" type="Doctor">
+        <id property="id" column="doct_id"/><!--医生主键-->
+        <result property="doctorName" column="doctorName"/><!--医生姓名-->
+        <result property="gender" column="gender"/><!--医生性别-->
+        <result property="phone" column="doct_phon"/><!--医生电话-->
+        <result property="title" column="title"/><!--医生职称-->
+        <association property="department" javaType="Department">
+            <id property="deptId" column="dept_id"/><!--部门主键-->
+            <result property="deptName" column="dept_name"/><!--部门名称-->
+            <result property="location" column="location"/><!--部门位置-->
+            <result property="deptPhone" column="dept_phone"/><!--部门电话-->
+        </association>
+    </resultMap>
+    <!--查询医生基本信息及部门信息-->
+    <select id="queryDoctorInfoAndDepartmentInfo" resultMap="DoctorInfoAndDepartmentInfo">
+        SELECT d.id as doct_id,d.doctorName,d.gender,d.title,d.phone as doct_phon,
+        dept.id as dept_id,dept.dept_name,dept.location,dept.phone as dept_phone
+        from doctor_info d, department dept
+        where d.department_id=dept.id and d.id=#{doctorid}
+    </select>
+</mapper>

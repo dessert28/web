@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Spring Security 认证与授权过程（jsj2434）",
+    "subtitle": "数据库用户来源 sys_user / sys_role / sys_user_role，密码 BCrypt，授权按角色",
+    "output": ".archify/sequence-spring-security-auth-20261120-093500/spring-security-auth.html",
+    "column_fit": "spread",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    { "id": "browser", "type": "external", "label": "浏览器", "sublabel": "表单 / 页面" },
+    { "id": "filter", "type": "security", "label": "SecurityFilterChain", "sublabel": "WebAuthConfig" },
+    { "id": "authMgr", "type": "security", "label": "AuthManager", "sublabel": "DaoAuthenticationProvider" },
+    { "id": "uds", "type": "backend", "label": "UserDetailsService", "sublabel": "DataBaseUserDeatilsService" },
+    { "id": "db", "type": "database", "label": "MySQL", "sublabel": "sys_user / sys_role" },
+    { "id": "controller", "type": "frontend", "label": "Controller + 视图", "sublabel": "departmentList" }
+  ],
+  "messages": [
+    { "id": "anon-request", "from": "browser", "to": "filter", "y": 160, "label": "GET /selectAllUsers（无会话）", "variant": "default" },
+    { "id": "anon-redirect", "from": "filter", "to": "browser", "y": 190, "label": "302 /toLogin", "variant": "return" },
+
+    { "id": "login-post", "from": "browser", "to": "filter", "y": 220, "label": "POST /login（admin / 1234）", "variant": "emphasis" },
+    { "id": "token", "from": "filter", "to": "authMgr", "y": 250, "label": "UsernamePasswordAuthenticationToken", "variant": "security" },
+    { "id": "load-user", "from": "authMgr", "to": "uds", "y": 280, "label": "loadUserByUsername(\"admin\")", "variant": "security" },
+    { "id": "query-user", "from": "uds", "to": "db", "y": 310, "label": "SELECT ... FROM sys_user", "variant": "default" },
+    { "id": "user-row", "from": "db", "to": "uds", "y": 340, "label": "1 行（BCrypt 哈希）", "variant": "return" },
+    { "id": "query-roles", "from": "uds", "to": "db", "y": 370, "label": "SELECT r.name JOIN sys_user_role", "variant": "default" },
+    { "id": "role-rows", "from": "db", "to": "uds", "y": 400, "label": "ADMIN", "variant": "return" },
+    { "id": "user-details", "from": "uds", "to": "authMgr", "y": 430, "label": "UserDetails（ROLE_ADMIN）", "variant": "return" },
+    { "id": "bcrypt", "from": "authMgr", "to": "filter", "y": 460, "label": "BCrypt 校验通过 → Authentication", "variant": "security" },
+    { "id": "login-redirect", "from": "filter", "to": "browser", "y": 490, "label": "302 /selectAllUsers（按角色跳转）", "variant": "return" },
+
+    { "id": "auth-request", "from": "browser", "to": "filter", "y": 520, "label": "GET /departmentList（携带会话）", "variant": "emphasis" },
+    { "id": "authorize", "from": "filter", "to": "controller", "y": 550, "label": "SecurityContext + 角色允许", "variant": "security" },
+    { "id": "render", "from": "controller", "to": "browser", "y": 580, "label": "200 页面（科室列表）", "variant": "return" },
+
+    { "id": "forbidden", "from": "filter", "to": "browser", "y": 610, "label": "403 AccessDenied（patient 访问 /selectAllUsers）", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "filter", "from": 160, "to": 194, "type": "security" },
+    { "participant": "filter", "from": 220, "to": 496, "type": "security" },
+    { "participant": "authMgr", "from": 250, "to": 466, "type": "security" },
+    { "participant": "uds", "from": 280, "to": 436, "type": "backend" },
+    { "participant": "db", "from": 310, "to": 406, "type": "database" },
+    { "participant": "filter", "from": 520, "to": 586, "type": "security" },
+    { "participant": "controller", "from": 550, "to": 584, "type": "frontend" },
+    { "participant": "filter", "from": 606, "to": 614, "type": "security" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "认证 Authentication",
+      "items": [
+        "表单由 UsernamePasswordAuthenticationFilter 接收",
+        "DaoAuthenticationProvider 调用 DataBaseUserDeatilsService",
+        "账号与 BCrypt 哈希来自 sys_user，角色来自 sys_user_role"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "授权 Authorization",
+      "items": [
+        "SecurityContext 中的 Authentication 决定是否放行",
+        "用户管理仅 ROLE_ADMIN，医生写操作 ADMIN/DOCTOR，浏览类三角色",
+        "登录成功按角色跳转，避免跳到自己无权访问的页面"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "失败与越权",
+      "items": [
+        "未登录 → 302 /toLogin，登录失败 → /toLogin?error",
+        "已登录但角色不足 → 403 AccessDenied",
+        "不区分账号不存在与密码错误，避免账号枚举"
+      ]
+    }
+  ]
+}

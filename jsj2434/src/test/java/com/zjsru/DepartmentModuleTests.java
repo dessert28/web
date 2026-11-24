@@ -33,7 +33,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * （其中包含 doctor_department 的科室种子数据与 doctor_info.department_id 回填）。
  */
 @SpringBootTest
-@AutoConfigureMockMvc
+// 本类测的是科室业务契约，不测安全；关闭过滤器链，避免被 Spring Security 拦截成 401。
+// 安全行为由 com.zjsru.SecurityConfigTests 单独覆盖。
+@AutoConfigureMockMvc(addFilters = false)
 public class DepartmentModuleTests {
 
     // 种子数据里的科室与医生分布（见仓库根 mybatis.sql）

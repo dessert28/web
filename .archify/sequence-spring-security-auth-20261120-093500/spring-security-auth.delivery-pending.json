@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "command": "deliver",
+  "status": "pending",
+  "receiptId": "5855a1c8-a2b1-4518-9efe-7d07b909ed27",
+  "input": "D:\\project\\githubclone\\web\\.archify\\sequence-spring-security-auth-20261120-093500\\candidate.json",
+  "output": "D:\\project\\githubclone\\web\\.archify\\sequence-spring-security-auth-20261120-093500\\spring-security-auth.html"
+}
