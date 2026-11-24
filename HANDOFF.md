@@ -6,7 +6,15 @@
 ## 一句话现状
 
 主项目是 **`jsj2434/`**，其余工程已归档到 `archive/`；**`hospital-registration/`** 是 2026-11-13 新增的实验二独立子项目（:8082，39 测试，已提交推送，详见其自身文档）。
-**2026-11-17 在 jsj2434 补全 Spring Security 7 认证改造**；**2026-11-20 把认证来源换成老师给的 1117 样本 `sys_user` 三表**，测试 14 → 20 全部实跑通过；改动均尚未提交（见第 0-新3 节）。
+**2026-11-17 在 jsj2434 补全 Spring Security 7 认证改造**；**2026-11-20 把认证来源换成老师给的 1117 样本 `sys_user` 三表**；**2026-11-24 登录统一到 Spring Security，并抽取三角色公共页头**。前两批已由 `dada1ba` / `d9ab55b` 提交推送，最后一批见 0-新5。测试基线 23/23。
+
+## 0-新5. 本次改动（2026-11-24 晚）：统一三角色页面导航
+
+- 新增 `templates/fragments/appbar.html`：公共 `head(title)` 与统一页头「医院信息管理」；导航含医生列表、条件查询、科室与医生（所有登录角色）、用户管理（仅 ADMIN）、当前用户名与退出登录。
+- 新增 `controller/NavigationAdvice.java`（`@ControllerAdvice` + `@ModelAttribute`）：把 `navRole` / `navUsername` 注入所有页面模型。项目未引 `thymeleaf-extras-springsecurity`，模板用普通 `th:if` 按角色显示。
+- 改造 `index.html`、`main.html`、`doctorList.html`、`doctorQuery.html`、`departmentList.html`、`login.html`、`error/403.html`：接入 fragment，隐藏旧「我的网站 / My Site」品牌与营销首页卡片，统一站点文案。
+- 实跑 `cd jsj2434; $env:JAVA_HOME='D:\pc\.jdks\graalvm-jdk-21.0.7'; .\mvnw.cmd -B -o clean test` → Tests run: 23, Failures: 0, Errors: 0 / BUILD SUCCESS；三角色导航冒烟结果见 `.workbuddy/memory/2026-11-24.md`。
+- 本批改动在 2026-11-24 的 GitHub 同步中提交并推送（提交哈希见 `git log`）。仓库内大文件与构建产物未纳入提交。
 
 ## 0-新4. 本次改动（2026-11-24）：登录统一到 Spring Security
 
@@ -14,7 +22,7 @@
 - `DataBaseUserDeatilsService` 从 `JdbcTemplate` 改为注入 `UserMapper`；角色三表联查把 `r.name` 别名为 `username`，服务层拼 `ROLE_` 前缀；禁用判断 `!Boolean.TRUE.equals(status)`。类名保留原拼写以免改到配置与测试引用。
 - 登录页地址从 `/toLogin` 改为 `/login`（`/toLogin` 保留兼容）；失败/注销跳 `/login?error`、`/login?logout`；删除 `UserService.login` / `UserServiceImpl.login` 的 `admin/123` 判断和 `/logout2` 提示页，模板链接同步改为 `/login`、`/logout`。
 - 实跑 `cd jsj2434; $env:JAVA_HOME='D:\pc\.jdks\graalvm-jdk-21.0.7'; .\mvnw.cmd -B clean test` → Tests run: 23, Failures: 0, Errors: 0 / BUILD SUCCESS；`spring-boot:run` 冒烟：`/login`、`/toLogin` 均 200，未登录跳 `/login`，三种账号按角色跳转，注销回 `/login?logout`；临时实例已停止。`jsj2434/README.md` 已同步账号/测试数/路由。
-- 改动均**尚未提交**。注意从 `jsj2434/` 目录执行 Maven，否则 `.mvn/maven.config` 的相对 `--settings` 找不到。
+- 改动已由 `dada1ba`（代码）与 `d9ab55b`（文档）提交推送。注意从 `jsj2434/` 目录执行 Maven，否则 `.mvn/maven.config` 的相对 `--settings` 找不到。
 
 ## 0-新3. 本次改动（2026-11-20）：jsj2434 接入 1117 样本的数据库认证
 
@@ -80,7 +88,7 @@ $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
 2. **`/logout` 行为被覆盖**：旧的 GET `/logout` 返回假「张三」JSON，现在被 Security LogoutFilter 前置拦截，销毁会话并重定向 `/toLogin?logout`。`UserController.logout()` 同名方法不再生效（源码保留未删）。
 3. `UserServiceImpl.login` 的硬编码 `admin/123` 判断、`UserController.login` 仍是死代码；按 AGENTS 红线不删历史演示代码，仅注明。
 4. CSRF 关闭（课程演示口径）；若将来上 CSRF 需给 `login.html` 表单加 token。
-5. 改动**尚未提交、未推送**；按 AGENTS 第 5 节提交前先 `git status` 确认无 `target/`、IDE 状态。
+5. 改动已由 `dada1ba` / `d9ab55b` 提交推送；按 AGENTS 第 5 节提交前先 `git status` 确认无 `target/`、IDE 状态。
 6. 工作区里的 `jsj2434/domain/Users.java`（新增 `private String id;`）**非本次改造内容**，本会话未修改该文件，提交时请单独甄别归属。另有根目录下 `hospital-registration.zip`、`zero-one-his2607*` 等未跟踪文件，与本次无关。
 
 ## 0. 本次改动（2026-11-10）：Department 模块
