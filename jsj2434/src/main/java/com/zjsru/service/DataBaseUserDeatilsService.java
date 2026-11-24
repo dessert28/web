@@ -1,6 +1,9 @@
 package com.zjsru.service;
 
-import org.springframework.jdbc.core.JdbcTemplate;
+import com.zjsru.domain.Users;
+import com.zjsru.mapper.UserMapper;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -12,62 +15,45 @@ import java.util.List;
 /**
  * Spring Security 的数据库用户来源。
  *
- * <p>对应老师给的 1117 样本三表：</p>
+ * <p>认证数据改由 {@link UserMapper} 的 XML 映射提供（对应老师给的三表）：</p>
  * <ul>
- *   <li>{@code sys_user}：账号、BCrypt 密码、{@code enabled}；</li>
- *   <li>{@code sys_role}：{@code ADMIN} / {@code DOCTOR} / {@code PATIENT}；</li>
- *   <li>{@code sys_user_role}：用户与角色的多对多关联。</li>
+ *   <li>{@code findByUsername} 查 {@code sys_user}，并把 {@code enabled} 映射成
+ *       {@link Users#getStatus()}；</li>
+ *   <li>{@code findRolesByUserId} 三表联查，把 {@code sys_role.name} 别名为
+ *       {@code username}，这里再拼上 {@code ROLE_} 前缀。</li>
  * </ul>
  *
- * <p>密码不在这里比对：本类只把库里的 BCrypt 哈希交给
- * {@code DaoAuthenticationProvider}，由 {@code WebAuthConfig} 里的
- * {@code BCryptPasswordEncoder} 完成校验。账号被禁用时通过
- * {@code disabled(true)} 让 Security 直接拒绝登录。</p>
- *
- * <p>注意：样本种子密码是 {@code 1234}（不是 {@code 123}），
- * 账号为 {@code admin} / {@code doctor} / {@code patient}。</p>
+ * <p>密码不在这里比对：框架用 {@code BCryptPasswordEncoder} 校验库里的 BCrypt 哈希。
+ * 账号被禁用时通过 {@code disabled(true)} 拒绝登录。样本账号为
+ * {@code admin} / {@code doctor} / {@code patient}，密码 {@code 1234}（不是 123）。</p>
  */
 @Service
 public class DataBaseUserDeatilsService implements UserDetailsService {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final UserMapper userMapper;
 
-    public DataBaseUserDeatilsService(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public DataBaseUserDeatilsService(UserMapper userMapper) {
+        this.userMapper = userMapper;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        List<SysUserRow> rows = jdbcTemplate.query(
-                "select id, username, password, enabled from sys_user where username = ?",
-                (rs, rowNum) -> new SysUserRow(
-                        rs.getLong("id"),
-                        rs.getString("username"),
-                        rs.getString("password"),
-                        rs.getBoolean("enabled")),
-                username);
-
-        if (rows.isEmpty()) {
+        Users user = userMapper.findByUsername(username);
+        if (user == null) {
             // 不区分「用户不存在」与「密码错误」，避免账号枚举
             throw new UsernameNotFoundException("用户名或密码错误");
         }
 
-        SysUserRow row = rows.get(0);
-        List<String> roleNames = jdbcTemplate.queryForList(
-                "select r.name from sys_role r "
-                        + "join sys_user_role ur on ur.role_id = r.id "
-                        + "where ur.user_id = ?",
-                String.class, row.id());
+        List<Users> roles = userMapper.findRolesByUserId(Integer.valueOf(user.getId()));
+        List<GrantedAuthority> authorities = roles.stream()
+                // XML 把 sys_role.name 别名成 username，所以这里拿到的是 ADMIN/DOCTOR/PATIENT
+                .map(role -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + role.getUsername()))
+                .toList();
 
-        return User.withUsername(row.username())
-                .password(row.password())
-                // roles(...) 会自动补 ROLE_ 前缀，hasRole("DOCTOR") 可直接匹配
-                .roles(roleNames.toArray(new String[0]))
-                .disabled(!row.enabled())
+        return User.withUsername(user.getUsername())
+                .password(user.getPassword())
+                .authorities(authorities)
+                .disabled(!Boolean.TRUE.equals(user.getStatus()))
                 .build();
-    }
-
-    /** 只在本类内部使用的行映射，不暴露成 domain。 */
-    private record SysUserRow(long id, String username, String password, boolean enabled) {
     }
 }

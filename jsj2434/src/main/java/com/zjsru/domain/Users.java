@@ -10,5 +10,7 @@ public class Users {
     private String email;
     private String phone;
     private String address;
+    //sys_user.enabled 的映射字段，供 Spring Security 判断是否禁用账号
+    private Boolean status;
 
 }

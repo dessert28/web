@@ -25,4 +25,10 @@ public interface UserMapper {
     //添加一个用户信息
     @Insert("insert into tb_users(username, password, email) values(#{username}, #{password}, #{email})")
     void insertUser(Users user);
+
+    //根据用户名查询用户信息（认证用，查 sys_user）
+    Users findByUsername(String username);
+
+    //根据用户ID查询角色（认证用，三表联查）
+    List<Users> findRolesByUserId(Integer userId);
 }

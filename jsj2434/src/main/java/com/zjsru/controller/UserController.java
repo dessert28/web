@@ -12,17 +12,15 @@ import java.util.List;
 /**
  * 用户相关请求。
  *
- * <p>登录与注销已交给 Spring Security：</p>
+ * <p>登录与注销由 Spring Security 接管：</p>
  * <ul>
+ *   <li>{@code GET /login}（兼容 {@code /toLogin}）只负责渲染登录表单；</li>
  *   <li>{@code POST /login} 由 {@code UsernamePasswordAuthenticationFilter} 处理，
  *       认证来源是 {@code DataBaseUserDeatilsService} 查的 {@code sys_user} 三表；</li>
- *   <li>{@code GET /logout} 由 {@code LogoutFilter} 处理；</li>
- *   <li>失败重定向到 {@code /toLogin?error}，注销成功重定向到 {@code /toLogin?logout}，
+ *   <li>{@code GET/POST /logout} 由 {@code LogoutFilter} 处理；</li>
+ *   <li>失败重定向到 {@code /login?error}，注销成功重定向到 {@code /login?logout}，
  *       本类只负责把这两个参数翻译成页面提示。</li>
  * </ul>
- *
- * <p>因此这里不再声明 {@code /login} 与 {@code /logout} 的处理方法，
- * 避免与过滤器形成两个入口。</p>
  */
 @Controller
 public class UserController {
@@ -42,7 +40,7 @@ public class UserController {
      * @param error  非空表示上一次认证失败（Security 的 failureUrl）
      * @param logout 非空表示刚注销（Security 的 logoutSuccessUrl）
      */
-    @RequestMapping("/toLogin")
+    @RequestMapping(value = {"/login", "/toLogin"}, method = RequestMethod.GET)
     public ModelAndView toLogin(@RequestParam(value = "error", required = false) String error,
                                 @RequestParam(value = "logout", required = false) String logout) {
         ModelAndView mv = new ModelAndView("login");
@@ -60,14 +58,6 @@ public class UserController {
     public ModelAndView toMain(Users user, ModelAndView modelAndView) {
         modelAndView.setViewName("main");
         modelAndView.addObject("username", user.getUsername());
-        return modelAndView;
-    }
-
-    //退出登录的提示页（真正的注销由 Security 的 /logout 完成）
-    @RequestMapping("/logout2")
-    public ModelAndView logout2(ModelAndView modelAndView) {
-        modelAndView.setViewName("login");
-        modelAndView.addObject("message", "退出成功");
         return modelAndView;
     }
 

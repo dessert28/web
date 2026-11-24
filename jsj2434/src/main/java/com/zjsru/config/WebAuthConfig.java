@@ -80,17 +80,17 @@ public class WebAuthConfig {
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage("/toLogin")
+                        .loginPage("/login")
                         .loginProcessingUrl("/login")
                         .usernameParameter("username")
                         .passwordParameter("password")
                         .successHandler(roleBasedSuccessHandler())  // 按角色跳转
-                        .failureUrl("/toLogin?error")
+                        .failureUrl("/login?error")
                         .permitAll()
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("/toLogin?logout")
+                        .logoutSuccessUrl("/login?logout")
                         .permitAll()
                 )
                 // 已登录但角色不足：保持 403 状态并转发到有内容的错误页，而不是空响应

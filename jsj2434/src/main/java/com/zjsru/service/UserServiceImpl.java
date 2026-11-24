@@ -14,16 +14,6 @@ public class UserServiceImpl implements UserService {
     private UserMapper userMapper;
 
     @Override
-    public Boolean login(Users user) {
-        //从数据库中读取用户信息，进行比对（这里简单地使用硬编码的用户信息进行比对）
-        if ("admin".equals(user.getUsername()) && "123".equals(user.getPassword())) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Override
     public List<Users> selectAllUsers() {
         List<Users> users = userMapper.selectAllUsers();
         return users;

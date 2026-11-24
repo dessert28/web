@@ -39,6 +39,10 @@ public class SecurityConfigTests {
     // 公开页：登录页与首页未登录可访问
     @Test
     public void publicPagesAreAccessible() throws Exception {
+        mockMvc.perform(get("/login"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("login"));
+        // 旧地址保留兼容
         mockMvc.perform(get("/toLogin"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("login"));
@@ -51,7 +55,7 @@ public class SecurityConfigTests {
     public void protectedRouteRedirectsToLoginWhenAnonymous() throws Exception {
         mockMvc.perform(get("/departmentList"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/toLogin"));
+                .andExpect(redirectedUrl("/login"));
     }
 
     // 正确账号密码：POST /login 登录成功，重定向到 /selectAllUsers
@@ -71,7 +75,7 @@ public class SecurityConfigTests {
                         .param("username", "admin")
                         .param("password", "wrong"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/toLogin?error"));
+                .andExpect(redirectedUrl("/login?error"));
     }
 
     // sys_user 里的 doctor 账号同样能登录，并按角色进医生列表（不是管理员用户列表）
@@ -91,7 +95,7 @@ public class SecurityConfigTests {
                         .param("username", "admin")
                         .param("password", "123"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/toLogin?error"));
+                .andExpect(redirectedUrl("/login?error"));
     }
 
     // 不存在的账号同样按「用户名或密码错误」处理，不泄露账号是否存在
@@ -101,7 +105,7 @@ public class SecurityConfigTests {
                         .param("username", "nobody")
                         .param("password", "1234"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/toLogin?error"));
+                .andExpect(redirectedUrl("/login?error"));
     }
 
     // 患者：登录落到科室列表；用户管理与医生列表都进不去
@@ -185,22 +189,22 @@ public class SecurityConfigTests {
 
         mockMvc.perform(post("/logout").session(session))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/toLogin?logout"));
+                .andExpect(redirectedUrl("/login?logout"));
 
         mockMvc.perform(get("/departmentList").session(session))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/toLogin"));
+                .andExpect(redirectedUrl("/login"));
     }
 
     // 登录页把 ?error / ?logout 翻译成可见提示，而不是只改 URL
     @Test
     public void loginPageShowsErrorAndLogoutHints() throws Exception {
-        mockMvc.perform(get("/toLogin").param("error", ""))
+        mockMvc.perform(get("/login").param("error", ""))
                 .andExpect(status().isOk())
                 .andExpect(view().name("login"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("用户名或密码错误")));
 
-        mockMvc.perform(get("/toLogin").param("logout", ""))
+        mockMvc.perform(get("/login").param("logout", ""))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("已安全退出")));
     }
