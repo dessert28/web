@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title}">医院信息管理</title>
+    <script th:src="@{/vendor/tailwindcss-3.4.16.js}"></script>
+    <script th:src="@{/vendor/md-material.config.js}"></script>
+    <link rel="stylesheet" th:href="@{/vendor/md-roboto.css}">
+    <link rel="stylesheet" th:href="@{/css/md-material.css}">
+</head>
+<body>
+<!-- 全站统一页头：浏览类入口对所有登录角色开放，用户管理仅管理员可见，退出登录始终可见 -->
+<header th:fragment="appbar(active)" class="md-appbar px-4 md:px-6 lg:px-8">
+    <div class="md-appbar__inner max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+        <a href="/" class="font-sans font-medium tracking-tight text-lg md:text-xl text-white">医院信息管理</a>
+        <nav class="flex flex-wrap items-center gap-3 md:gap-4 text-sm">
+            <a href="/selectAllUsers" th:if="${navRole == 'ADMIN'}"
+               th:classappend="${active == 'users'} ? 'underline underline-offset-4' : ''"
+               class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">用户管理</a>
+            <a href="/doctorList"
+               th:classappend="${active == 'doctors'} ? 'underline underline-offset-4' : ''"
+               class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">医生列表</a>
+            <a href="/doctorQuery"
+               th:classappend="${active == 'query'} ? 'underline underline-offset-4' : ''"
+               class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">条件查询</a>
+            <a href="/departmentList"
+               th:classappend="${active == 'departments'} ? 'underline underline-offset-4' : ''"
+               class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">科室与医生</a>
+            <span th:if="${navUsername != null and navUsername != ''}"
+                  class="hidden md:inline text-white/70 text-xs" th:text="${navUsername}"></span>
+            <a href="/logout" th:if="${navRole != null and navRole != ''}"
+               class="text-white transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">退出登录</a>
+        </nav>
+    </div>
+</header>
+</body>
+</html>
