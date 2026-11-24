@@ -8,6 +8,14 @@
 主项目是 **`jsj2434/`**，其余工程已归档到 `archive/`；**`hospital-registration/`** 是 2026-11-13 新增的实验二独立子项目（:8082，39 测试，已提交推送，详见其自身文档）。
 **2026-11-17 在 jsj2434 补全 Spring Security 7 认证改造**；**2026-11-20 把认证来源换成老师给的 1117 样本 `sys_user` 三表**，测试 14 → 20 全部实跑通过；改动均尚未提交（见第 0-新3 节）。
 
+## 0-新4. 本次改动（2026-11-24）：登录统一到 Spring Security
+
+- 按用户提供的 `AirPortal-1795488011760/UserMapper.java|xml` 接入认证：`UserMapper` 增加 `findByUsername` / `findRolesByUserId`；用其合法 MyBatis XML 替换误提交的空 `<beans>` 文件（该文件会让 `sqlSessionFactory` 解析失败、应用起不来）；`Users` 增加 `Boolean status` 映射 `enabled as status`。
+- `DataBaseUserDeatilsService` 从 `JdbcTemplate` 改为注入 `UserMapper`；角色三表联查把 `r.name` 别名为 `username`，服务层拼 `ROLE_` 前缀；禁用判断 `!Boolean.TRUE.equals(status)`。类名保留原拼写以免改到配置与测试引用。
+- 登录页地址从 `/toLogin` 改为 `/login`（`/toLogin` 保留兼容）；失败/注销跳 `/login?error`、`/login?logout`；删除 `UserService.login` / `UserServiceImpl.login` 的 `admin/123` 判断和 `/logout2` 提示页，模板链接同步改为 `/login`、`/logout`。
+- 实跑 `cd jsj2434; $env:JAVA_HOME='D:\pc\.jdks\graalvm-jdk-21.0.7'; .\mvnw.cmd -B clean test` → Tests run: 23, Failures: 0, Errors: 0 / BUILD SUCCESS；`spring-boot:run` 冒烟：`/login`、`/toLogin` 均 200，未登录跳 `/login`，三种账号按角色跳转，注销回 `/login?logout`；临时实例已停止。`jsj2434/README.md` 已同步账号/测试数/路由。
+- 改动均**尚未提交**。注意从 `jsj2434/` 目录执行 Maven，否则 `.mvn/maven.config` 的相对 `--settings` 找不到。
+
 ## 0-新3. 本次改动（2026-11-20）：jsj2434 接入 1117 样本的数据库认证
 
 老师新给的 `1117/` 样本包含 `sys_user` / `sys_role` / `sys_user_role` 三张 RBAC 表（导出 SQL + 一份 `jsj2434` 旧快照）。核对结果：

@@ -5,7 +5,7 @@
 包名 `com.zjsru`，端口 8080。
 
 - 技术栈：Spring Boot 4.0.8 · Java 21 · Thymeleaf · MyBatis · MySQL 8 · **Spring Security 7**
-- 演示账号：`admin` / `123`（由 Spring Security 内存用户 + BCrypt 校验）
+- 演示账号：数据库 `sys_user` 三表里的 `admin` / `doctor` / `patient`，密码统一 `1234`（BCrypt），角色决定登录后的落点
 - 界面：Material Design（风格来源 [`archive/material-design-style-pack/`](../archive/material-design-style-pack/)），**全离线**，不依赖任何 CDN
 
 ## 运行
@@ -14,10 +14,10 @@
 $env:JAVA_HOME = 'D:\pc\.jdks\graalvm-jdk-21.0.7'
 .\mvnw.cmd spring-boot:run      # http://localhost:8080/
 .\mvnw.cmd -B clean compile     # 编译验证
-.\mvnw.cmd -B clean test        # 14 个测试（1 上下文 + 7 Department + 6 Security），需 MySQL
+.\mvnw.cmd -B clean test        # 23 个测试（1 上下文 + 7 Department + 15 Security），需 MySQL
 ```
 
-前置条件：本机 MySQL 8 已启动，`localhost:3306`，账号 `root/root`，库 `mybatis` 已建好 `tb_users`、`doctor_info`、`doctor_department` 表。全量建表 + 演示数据脚本在仓库根 [`mybatis.sql`](../mybatis.sql)（Navicat 导出，含数十张表），手动导入一次即可：
+前置条件：本机 MySQL 8 已启动，`localhost:3306`，账号 `root/root`，库 `mybatis` 已建好 `tb_users`、`doctor_info`、`doctor_department` 与认证用的 `sys_user`、`sys_role`、`sys_user_role` 表。全量建表 + 演示数据脚本在仓库根 [`mybatis.sql`](../mybatis.sql)（Navicat 导出，含数十张表），手动导入一次即可：
 
 ```
 mysql -uroot -p < ..\mybatis.sql
@@ -30,11 +30,10 @@ mysql -uroot -p < ..\mybatis.sql
 | 方法 | 路径 | 行为 |
 | --- | --- | --- |
 | GET | `/` | 欢迎页 `index.html` |
-| GET | `/toLogin` | 登录表单 `login.html`（公开） |
-| POST | `/login` | Spring Security `formLogin` 处理，`admin/123` 成功重定向 `/selectAllUsers`，失败 `/toLogin?error` |
+| GET | `/login` | 登录表单 `login.html`（公开）；旧地址 `/toLogin` 保留兼容 |
+| POST | `/login` | Spring Security `formLogin` 处理，按角色跳 `/selectAllUsers`、`/doctorList`、`/departmentList`，失败 `/login?error` |
 | GET/POST | `/toMain` | 主页，模型带 `username` |
-| GET/POST | `/logout` | Spring Security `logoutUrl` 前置拦截：销毁会话并重定向 `/toLogin?logout`；**旧的「返回张三 JSON」行为已被覆盖，controller 同名方法不再生效** |
-| GET | `/logout2` | 登录页 + `message=退出成功` |
+| GET/POST | `/logout` | Spring Security `logoutUrl` 前置拦截：销毁会话并重定向 `/login?logout`；**旧的「返回张三 JSON」行为已被覆盖，controller 同名方法不再生效** |
 | GET | `/test/{name}/{password}` | Restful 路径参数绑定演示，渲染 `main` |
 | GET | `/selectAllUsers` | 查询 `tb_users` 全部用户，渲染 `main` 表格 |
 | GET | `/queryUserById/{id}` | 按主键查询用户，返回 JSON |
@@ -52,13 +51,13 @@ mysql -uroot -p < ..\mybatis.sql
 
 ## 代码结构
 
-- `controller/UserController.java`：页面 / 登录 / 退出 / 用户查询路由
+- `controller/UserController.java`：页面 / 登录页 / 用户查询路由；登录与注销由 Security 接管
 - `controller/DoctorController.java`：医生查询 / 列表 / 新增 / 条件查询 / 单条件查询 / 动态更新路由
 - `controller/DepartmentController.java`：科室关联查询 / 科室列表页路由
-- `mapper/UserMapper.java`：MyBatis 注解 SQL，操作 `tb_users`
+- `mapper/UserMapper.java` + `resources/mapper/UserMapper.xml`：注解 SQL 操作 `tb_users`，XML 的 `findByUsername` / `findRolesByUserId` 查 `sys_*` 三表做认证
 - `mapper/DoctorMapper.java` + `resources/mapper/DoctorMapper.xml`：MyBatis XML 映射，操作 `doctor_info`（`<where>` 条件、`<choose>` 单条件、`<set>` 动态更新、`<foreach>` 批量查询）
 - `mapper/DepartmentMapper.java` + `resources/mapper/DepartmentMapper.xml`：MyBatis XML 映射，`doctor_department` **LEFT JOIN** `doctor_info`，用 `<resultMap>` + `<collection>` 做一对多聚合
-- `service/`：`UserService`/`UserServiceImpl`、`DoctorService`/`DoctorServiceImpl`、`DepartmentService`/`DepartmentServiceImpl`
+- `service/`：`UserService`/`UserServiceImpl`、`DoctorService`/`DoctorServiceImpl`、`DepartmentService`/`DepartmentServiceImpl`、`DataBaseUserDeatilsService`（Security 的 `UserDetailsService` 实现）
 - `domain/Users.java`、`domain/Doctor.java`、`domain/Department.java`：Lombok `@Data`
 - `templates/`：`index` / `login` / `main` / `doctorList` / `doctorQuery` / `departmentList`
 
@@ -75,12 +74,12 @@ mysql -uroot -p < ..\mybatis.sql
 
 ## 说明
 
-- **Spring Security 7（`config/WebAuthConfig.java`）**：BCrypt 内存用户 `admin/123` 接管 `/login` 与 `/logout`；`/`、`/toLogin`、静态资源公开，其余路由需登录；CSRF 关闭（登录表单无 token）。`application.properties` 里的 `spring.security.user.*` 已移除。
-- 旧的 `UserServiceImpl.login` 硬编码判断与 `UserController.login`/`logout` 同名方法仍留在源码里，但 HTTP 层已被 Security 过滤器前置覆盖；`queryUserByNameAndPassword` 等按明文查库的演示接口不受影响。
-- **行为变化**：现在全站（除公开页）需要登录，未登录访问受保护路由会 302 到 `/toLogin`；退出是真正的会话销毁，不再是假的「张三」JSON。
+- **Spring Security 7（`config/WebAuthConfig.java`）**：认证来源是 `DataBaseUserDeatilsService` → `UserMapper` 查 `sys_user` / `sys_user_role` / `sys_role`，密码由 BCrypt 校验；`ADMIN` 可进用户管理，医生增改限 `ADMIN`/`DOCTOR`，科室与医生列表三种角色都能看。`/`、`/login`、`/toLogin`、静态资源公开，其余路由需登录；CSRF 关闭（登录表单无 token）。
+- 手工登录代码已清除：`UserService.login` / `UserServiceImpl.login` 的 `admin/123` 判断、`/logout2` 提示页都不再存在，登录与注销只有 Spring Security 一条路径；`queryUserByNameAndPassword` 等按明文查库的演示接口不受影响。
+- **行为变化**：全站（除公开页）需要登录，未登录访问受保护路由会 302 到 `/login`；退出是真正的会话销毁。
 - `DoctorMapper.xml#queryDoctorById` 用单参数 `#{doctorid}`（对应方法参数名 `doctorid`），若改成多个参数需加 `@Param`。
 - 无全局异常处理（`GlobalExceptionHandler`/`Result` 已随覆盖删除），异常走 Spring Boot 默认处理。
-- 测试（共 14 个）：`Jsj2434ApplicationTests.contextLoads`（1）+ `DepartmentModuleTests`（7，覆盖页面渲染、关联查询、缺参/不存在的科室、`<collection>` 一对多聚合与空科室回归，`@AutoConfigureMockMvc(addFilters=false)` 只测业务、不测安全）+ `SecurityConfigTests`（6，覆盖公开页放行、未登录重定向、登录成功/失败、带会话访问受保护路由、注销使会话失效，走真实过滤器链）。
+- 测试（共 23 个）：`Jsj2434ApplicationTests.contextLoads`（1）+ `DepartmentModuleTests`（7，覆盖页面渲染、关联查询、缺参/不存在的科室、`<collection>` 一对多聚合与空科室回归，`@AutoConfigureMockMvc(addFilters=false)` 只测业务、不测安全）+ `SecurityConfigTests`（15，覆盖公开页放行、未登录重定向、三种角色登录与越权、登录成功/失败、带会话访问受保护路由、注销使会话失效、角色映射与未知用户，走真实过滤器链）。
 - 科室关联查询依赖 `doctor_info.department_id` 外键。`mybatis.sql` 已补 `doctor_department` 的 6 条科室种子数据、`dept_phone` 列，以及把 `department_id` 按 `department` 文本回填的 `UPDATE`；**用旧库升级时需手动执行这三段**（仅重导 `mybatis.sql` 会 `DROP` 重建全部表）。
 - `doctor_info` 同时存在 `department`（历史文本列）与 `department_id`（外键）两套科室表达，关联查询只认后者，两者的口径应保持一致。
 - 界面改造前的快照与回滚步骤见 [`bak/jsj2434-md-20261103-110723/ROLLBACK.md`](../bak/jsj2434-md-20261103-110723/ROLLBACK.md)。
